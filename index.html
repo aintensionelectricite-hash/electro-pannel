@@ -227,6 +227,8 @@ const RAIL_OFFSETS={};   // rail.label → décalage Y (mm)
 const RAIL_FRONT_Z={};   // rail.label → position Z face avant rail (mm depuis face avant panneau)
 let planViewMeta=null,planDepthDrag=null;
 let peLibDragActive=false; // PE en cours de drag depuis bibliothèque
+const COTE_HITS=[];        // zones cliquables cotations {x,y,r,inputId}
+let wireDragging=null;     // {wire,ptIdx} point intermédiaire fil en drag
 
 // ═══════════════════════════════════════════════════════════════════════
 // GETTERS
@@ -269,6 +271,8 @@ function toggleWP(){
 
 function updateInfo(){
   const el=document.getElementById('info');
+  if(wm.active&&!wm.startP){el.innerHTML='<b style="color:#A06000">⚡ Mode fil</b> — Cliquer un point <span style="color:#FF8C00">⬤</span> de départ sur un composant &nbsp;<span style="color:#BBB">· Échap : annuler</span>';return;}
+  if(wm.active&&wm.startP){el.innerHTML='<b style="color:#A06000">⚡ Fil en cours</b> — Cliquer le point <span style="color:#FF8C00">⬤</span> d\'arrivée &nbsp;<span style="color:#BBB">· Échap : annuler · Clic vide : annuler départ</span>';return;}
   if(selectedComp){const c=selectedComp.comp,rl=selectedComp.railRef;el.innerHTML=`<b style="color:#185FA5">${selectedComp.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm${rl?` &middot; ${rl.label}`:''}  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Supr: supprimer &middot; Ctrl+C: copier</span>`;}
   else if(doorSelected){const c=doorSelected.comp;el.innerHTML=`<b style="color:#6B3DA6">${doorSelected.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Clic droit: supprimer</span>`;}
   else{el.textContent='Cliquer-glisser pour déplacer · Dbl-clic étiquette · Clic droit supprimer · Fil : cliquer point ⬤ départ puis arrivée · Échap annuler · Ctrl+C/V copier · Supr supprimer';}
@@ -280,8 +284,8 @@ function togWire(){
 function togDoor(){
   doorVisible=!doorVisible;
   document.getElementById('btn-door').classList.toggle('door-on',doorVisible);
-  document.getElementById('cv-door').style.display=doorVisible?'block':'none';
   if(!doorVisible){doorSelected=null;doorHovered=null;}
+  setView(currentView);
   draw();updateInfo();
 }
 function clearAll(){
@@ -415,24 +419,35 @@ function autoLabel(comp){
 // Départ → montée/descente vers goulotte GH → horizontal → descente/montée arrivée
 // Jamais de diagonale, jamais de traversée de composant
 // ═══════════════════════════════════════════════════════════════════════
-function routeWireStrict(startPt,endPt,startComp,endComp,layout){
+function routeWireStrict(startPt,endPt,startComp,endComp,layout,startPtId,endPtId){
   const{zones}=layout;
   const[x1,y1]=startPt,[x2,y2]=endPt;
   const goulottes=zones.filter(z=>z.type==='goulH');
   if(!goulottes.length)return[startPt,endPt];
 
-  // 1. Chercher la goulotte qui est ENTRE les deux composants (en Y)
-  const yMin=Math.min(y1,y2),yMax=Math.max(y1,y2);
-  const between=goulottes.filter(z=>{const gY=z.y+z.h/2;return gY>=yMin-5&&gY<=yMax+5;});
-  const pool=between.length?between:goulottes;
+  // Sélection de la goulotte selon la direction de sortie du composant :
+  // 'bot' → fil descend → goulotte en dessous
+  // 'top' → fil monte → goulotte au dessus
+  // bornier (left/right) → goulotte la plus proche
+  let pool;
+  if(startPtId==='bot'){
+    const below=goulottes.filter(z=>z.y+z.h/2>y1);
+    pool=below.length?below:goulottes;
+  } else if(startPtId==='top'){
+    const above=goulottes.filter(z=>z.y+z.h/2<y1);
+    pool=above.length?above:goulottes;
+  } else {
+    // Bornier ou inconnu : goulotte entre les deux points
+    const yMin=Math.min(y1,y2),yMax=Math.max(y1,y2);
+    const between=goulottes.filter(z=>{const gY=z.y+z.h/2;return gY>=yMin-5&&gY<=yMax+5;});
+    pool=between.length?between:goulottes;
+  }
 
-  // 2. Préférer la goulotte la plus proche de chaque point
-  // Pour disj → born : goulotte AU-DESSUS du disj (la plus proche au-dessus du pt départ)
-  const midY=(y1+y2)/2;
-  const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-midY)<Math.abs(b.y+b.h/2-midY)?a:b);
+  // Goulotte la plus proche du point de départ dans le pool
+  const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-y1)<Math.abs(b.y+b.h/2-y1)?a:b);
   const gY=goulotte.y+goulotte.h/2;
 
-  // 3. 4 points stricts : départ → entrée goulotte → sortie goulotte → arrivée
+  // 4 points stricts : départ → entrée goulotte (même X) → sortie goulotte (même X que arrivée) → arrivée
   return[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
 }
 
@@ -774,37 +789,81 @@ function drawPlanView(layout){
       planViewHandles.push({zoneLabel:zone.label,canvasY:hY,minD:10,maxD:thick-5,scZ,OZ});
     } else if(zone?.type==='rail'){
       const railD=getZD(zone);
+      const RAIL_DIN_H=10; // épaisseur profil DIN 35 mm (fixe)
+      const defaultRailFZ=Math.max(RAIL_DIN_H+4,Math.round(railD*0.25));
+      const railFZ=Math.max(2,Math.min(
+        RAIL_FRONT_Z[zone.label]!==undefined?RAIL_FRONT_Z[zone.label]:defaultRailFZ,
+        railD-RAIL_DIN_H-2));
       const rX=px(intX),rW=pw(intW)*(flip?-1:1);
-      // Épaulement saillant
-      const shouldH=pd(railD*.12);
-      ctx.fillStyle='#B8C4CF';ctx.strokeStyle='#707888';ctx.lineWidth=.5;
-      ctx.fillRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),shouldH);
-      ctx.strokeRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),shouldH);
+      const sectionEndY=OZ+pd(railD);
+      const rFaceY=OZ+pd(railFZ);    // face avant rail DIN (canvas Y)
+      const rH=pd(RAIL_DIN_H);       // hauteur rail en pixels
+      const midX2=(Math.min(rX,rX+rW)+Math.max(rX,rX+rW))/2;
+
+      // Section fond gris-bleu
+      ctx.fillStyle='#D8E4EE';ctx.strokeStyle='#7090A8';ctx.lineWidth=.5;
+      ctx.fillRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),pd(railD));
+      ctx.strokeRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),pd(railD));
+
       // Rail DIN profil
-      const rZ=OZ+pd(railD*.18),rH=pd(railD*.30);
-      const rg=ctx.createLinearGradient(Math.min(rX,rX+rW),rZ,Math.min(rX,rX+rW),rZ+rH);
-      rg.addColorStop(0,'#CCC');rg.addColorStop(.45,'#F5F5F5');rg.addColorStop(1,'#AAA');
-      ctx.fillStyle=rg;ctx.fillRect(Math.min(rX,rX+rW),rZ,Math.abs(rW),rH);
-      ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.strokeRect(Math.min(rX,rX+rW),rZ,Math.abs(rW),rH);
-      // Drag handle profondeur rail
-      const hY2=rZ+rH,midX2=(Math.min(rX,rX+rW)+Math.max(rX,rX+rW))/2;
-      const isDrg2=planDepthDrag?.zoneLabel===zone.label;
-      ctx.strokeStyle=isDrg2?'#C85800':'rgba(200,88,0,.55)';ctx.lineWidth=isDrg2?2:1;ctx.setLineDash([3,2]);
-      ctx.beginPath();ctx.moveTo(Math.min(rX,rX+rW),hY2);ctx.lineTo(Math.max(rX,rX+rW),hY2);ctx.stroke();ctx.setLineDash([]);
-      ctx.fillStyle=isDrg2?'#C85800':'rgba(200,88,0,.7)';ctx.beginPath();ctx.arc(midX2,hY2,3.5,0,Math.PI*2);ctx.fill();
-      // Cote profondeur rail
-      const cX2=Math.max(rX,rX+rW)+18;
-      ctx.strokeStyle='#1D9E75';ctx.fillStyle='#C85800';ctx.lineWidth=.6;
-      ctx.beginPath();ctx.moveTo(cX2,OZ);ctx.lineTo(cX2,hY2);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(cX2-3,OZ);ctx.lineTo(cX2+3,OZ);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(cX2-3,hY2);ctx.lineTo(cX2+3,hY2);ctx.stroke();
-      ctx.save();ctx.translate(cX2+11,(OZ+hY2)/2);ctx.rotate(Math.PI/2);
+      const rg2=ctx.createLinearGradient(Math.min(rX,rX+rW),rFaceY,Math.min(rX,rX+rW),rFaceY+rH);
+      rg2.addColorStop(0,'#CCC');rg2.addColorStop(.45,'#F5F5F5');rg2.addColorStop(1,'#AAA');
+      ctx.fillStyle=rg2;ctx.fillRect(Math.min(rX,rX+rW),rFaceY,Math.abs(rW),rH);
+      ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.strokeRect(Math.min(rX,rX+rW),rFaceY,Math.abs(rW),rH);
+
+      // ── Cotes inter ──
+      const jeuAv=Math.max(0,Math.round(railFZ));
+      const jeuAr=Math.max(0,Math.round(railD-railFZ-RAIL_DIN_H));
+      const cX2=Math.max(rX,rX+rW)+8;
+
+      // Jeu avant (vert)
+      ctx.strokeStyle='#1D9E75';ctx.fillStyle='#1D9E75';ctx.lineWidth=.6;
+      if(pd(jeuAv)>3){
+        ctx.beginPath();ctx.moveTo(cX2,OZ);ctx.lineTo(cX2,rFaceY);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cX2-2.5,OZ);ctx.lineTo(cX2+2.5,OZ);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cX2-2.5,rFaceY);ctx.lineTo(cX2+2.5,rFaceY);ctx.stroke();
+        if(pd(jeuAv)>14){ctx.save();ctx.translate(cX2+9,(OZ+rFaceY)/2);ctx.rotate(Math.PI/2);ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`jeu av.${jeuAv}mm`,0,0);ctx.restore();}
+      }
+      // Rail DIN (bleu)
+      const rcX=cX2+20;
+      ctx.strokeStyle='#4060C0';ctx.fillStyle='#4060C0';ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(rcX,rFaceY);ctx.lineTo(rcX,rFaceY+rH);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(rcX-2.5,rFaceY);ctx.lineTo(rcX+2.5,rFaceY);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(rcX-2.5,rFaceY+rH);ctx.lineTo(rcX+2.5,rFaceY+rH);ctx.stroke();
+      if(rH>10){ctx.save();ctx.translate(rcX+9,rFaceY+rH/2);ctx.rotate(Math.PI/2);ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`rail ${RAIL_DIN_H}mm`,0,0);ctx.restore();}
+      // Jeu arrière (vert)
+      ctx.strokeStyle='#1D9E75';ctx.fillStyle='#1D9E75';ctx.lineWidth=.6;
+      if(pd(jeuAr)>3){
+        ctx.beginPath();ctx.moveTo(cX2,rFaceY+rH);ctx.lineTo(cX2,sectionEndY);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cX2-2.5,rFaceY+rH);ctx.lineTo(cX2+2.5,rFaceY+rH);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cX2-2.5,sectionEndY);ctx.lineTo(cX2+2.5,sectionEndY);ctx.stroke();
+        if(pd(jeuAr)>14){ctx.save();ctx.translate(cX2+9,(rFaceY+rH+sectionEndY)/2);ctx.rotate(Math.PI/2);ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`jeu ar.${jeuAr}mm`,0,0);ctx.restore();}
+      }
+      // Profondeur totale (orange)
+      const cX3=cX2+40;
+      ctx.strokeStyle='#C85800';ctx.fillStyle='#C85800';ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(cX3,OZ);ctx.lineTo(cX3,sectionEndY);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX3-3,OZ);ctx.lineTo(cX3+3,OZ);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX3-3,sectionEndY);ctx.lineTo(cX3+3,sectionEndY);ctx.stroke();
+      ctx.save();ctx.translate(cX3+11,(OZ+sectionEndY)/2);ctx.rotate(Math.PI/2);
       ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`prof. ${Math.round(railD)}mm`,0,0);ctx.restore();
-      planViewHandles.push({zoneLabel:zone.label,canvasY:hY2,minD:8,maxD:thick-5,scZ,OZ});
-      // Composants à cette hauteur
+
+      // ── Drag handles ──
+      // Orange = profondeur totale section (bas)
+      const isDrg2=planDepthDrag?.zoneLabel===zone.label&&planDepthDrag?.type!=='railZ';
+      ctx.strokeStyle=isDrg2?'#C85800':'rgba(200,88,0,.55)';ctx.lineWidth=isDrg2?2:1;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(Math.min(rX,rX+rW),sectionEndY);ctx.lineTo(Math.max(rX,rX+rW),sectionEndY);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=isDrg2?'#C85800':'rgba(200,88,0,.7)';ctx.beginPath();ctx.arc(midX2,sectionEndY,3.5,0,Math.PI*2);ctx.fill();
+      // Bleu = position Z rail DIN (face avant rail)
+      const isDrg3=planDepthDrag?.zoneLabel===zone.label&&planDepthDrag?.type==='railZ';
+      ctx.strokeStyle=isDrg3?'#1A5FD0':'rgba(26,95,208,.6)';ctx.lineWidth=isDrg3?2:1.2;ctx.setLineDash([2,4]);
+      ctx.beginPath();ctx.moveTo(Math.min(rX,rX+rW),rFaceY);ctx.lineTo(Math.max(rX,rX+rW),rFaceY);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=isDrg3?'#1A5FD0':'rgba(26,95,208,.8)';ctx.beginPath();ctx.arc(midX2,rFaceY,4,0,Math.PI*2);ctx.fill();
+
+      // Composants en section
       PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===zone.label&&cutY>=p.wy&&cutY<=p.wy+p.comp.modH).forEach(p=>{
         const cx=px(p.wx),cW=pw(p.comp.modW)*(flip?-1:1);
-        const cFr=OZ+pd(railD*.06),cD=pd(railD*.82);
+        const cFr=rFaceY-pd(3),cD=rH+pd(6);
         ctx.fillStyle=p.comp.color+'90';ctx.strokeStyle=p.comp.color;ctx.lineWidth=.5;
         ctx.fillRect(Math.min(cx,cx+cW),cFr,Math.abs(cW),cD);
         ctx.strokeRect(Math.min(cx,cx+cW),cFr,Math.abs(cW),cD);
@@ -814,6 +873,19 @@ function drawPlanView(layout){
           ctx.fillText(p.label||'',Math.min(cx,cx+cW)+Math.abs(cW)/2,cFr+cD/2+fs*.35);
         }
       });
+
+      // Indicateur inclinaison 15° pour rails borniers
+      if(zone.sub==='born'){
+        ctx.save();
+        ctx.strokeStyle='rgba(130,70,20,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(Math.min(rX,rX+rW),rFaceY);ctx.lineTo(Math.max(rX,rX+rW),rFaceY+rH);ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font='bold 7px system-ui';ctx.fillStyle='rgba(100,50,10,.8)';ctx.textAlign='left';
+        ctx.fillText('15°',Math.max(rX,rX+rW)+3,rFaceY+rH*.6);
+        ctx.restore();
+      }
+      planViewHandles.push({type:'depth',zoneLabel:zone.label,canvasY:sectionEndY,minD:RAIL_DIN_H+6,maxD:thick-5,scZ,OZ});
+      planViewHandles.push({type:'railZ',zoneLabel:zone.label,canvasY:rFaceY,minZ:2,maxZ:railD-RAIL_DIN_H-2,scZ,OZ});
     }
     planViewMeta={OZ,scZ,thick,isAbove,isBelow,cutY,handles:planViewHandles,w,flip,OX};
   }
@@ -878,7 +950,6 @@ function drawPlateView(which,layout){
   const PW=Math.round(w*sc)+90,PH=Math.round(m*scZ)+55;
   const cv=document.getElementById(cvId);
   cv.width=PW;cv.height=PH;cv.style.width=PW+'px';cv.style.height=PH+'px';
-  cv.style.display='block';
   const ctx=cv.getContext('2d');ctx.clearRect(0,0,PW,PH);
   const OX=46,OZ=14;
   function px(x){return OX+x*sc}function pw(v){return v*sc}function pd(v){return v*scZ}
@@ -942,7 +1013,7 @@ function drawDoorView(layout){
   ctx.fillText('Zone signalisation (voyants)',sx(w/2),sy(m+10));
 
   // Poignée
-  ctx.fillStyle='rgba(200,210,220,.8)';ctx.strokeStyle='#5070900';ctx.lineWidth=.7;
+  ctx.fillStyle='rgba(200,210,220,.8)';ctx.strokeStyle='#507090';ctx.lineWidth=.7;
   rr(ctx,sx(w-m-14),sy(h/2-40),sw(10),sw(80),3);ctx.fill();ctx.stroke();
 
   // Voyants posés
@@ -1007,6 +1078,16 @@ function drawWire(ctx,wire,sc,layout){
     const[px,py]=W2F(wx2,wy2);
     ctx.fillStyle=hl?'#FF9500':'#8B5C00';ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
   });
+  // Handles intermédiaires déplaçables (pts[1] et pts[2]) — visibles quand surligné
+  if(hl&&wire.pts.length>=4){
+    [1,2].forEach(i=>{
+      const[mx,my]=W2F(wire.pts[i][0],wire.pts[i][1]);
+      ctx.fillStyle='rgba(255,165,0,.95)';ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(mx,my,6,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.font='bold 7px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
+      ctx.fillText(i===1?'2':'3',mx,my+2.5);
+    });
+  }
   // Label Wn
   const fs=Math.max(7,Math.round(7*Math.min(getSc()*1.8,1)));
   const[lx,ly]=W2F(wire.pts[0][0],wire.pts[0][1]);
@@ -1095,6 +1176,7 @@ function drawComp(ctx,p,sc){
 // COTATIONS
 // ═══════════════════════════════════════════════════════════════════════
 function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
+  COTE_HITS.length=0;
   const C='#1D9E75';ctx.strokeStyle=C;ctx.fillStyle=C;
   function dimH(x,y1,y2,lbl,big){
     if(Math.abs(y2-y1)<3)return;
@@ -1119,7 +1201,15 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
   dimW(sy(0)-13,sx(intX),sx(intX+intW),`${intW} mm`,false);
   dimH(sx(0)-34,sy(0),sy(h),`${h} mm`,true);
   const ex=sx(w)+22;
-  zones.forEach(z=>dimH(ex+(z.type==='rail'?13:0),sy(z.y),sy(z.y+z.h),`${z.h}`,false));
+  zones.forEach(z=>{
+    const cx=ex+(z.type==='rail'?13:0);
+    const cy=(sy(z.y)+sy(z.y+z.h))/2;
+    dimH(cx,sy(z.y),sy(z.y+z.h),`${z.h}`,false);
+    // Enregistrer zone cliquable : GH → gh-h, entre-rails → esp-r
+    if(z.type==='goulH')COTE_HITS.push({x:cx-10,y:cy,r:18,inputId:'gh-h'});
+  });
+  // Cotes largeur cliquables
+  COTE_HITS.push({x:(sx(0)+sx(w))/2,y:sy(0)-24,r:18,inputId:'sel-model'});
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1161,7 +1251,12 @@ function exportHTML(){
 // ═══════════════════════════════════════════════════════════════════════
 function buildLib(){
   const panel=document.getElementById('lib');
-  panel.innerHTML='<div style="font-size:10px;font-weight:700;color:#BBBBB5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;flex-shrink:0">Bibliothèque</div>';
+  const existingToggle=panel.querySelector('.panel-toggle');
+  panel.innerHTML='';
+  if(existingToggle)panel.appendChild(existingToggle);
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:10px;font-weight:700;color:#BBBBB5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;flex-shrink:0';
+  hdr.textContent='Bibliothèque';panel.appendChild(hdr);
   const groups=[...new Set(COMPS.map(c=>c.group))];
   groups.forEach(g=>{
     const sec=document.createElement('div');sec.className='lib-sec';sec.textContent=g;panel.appendChild(sec);
@@ -1261,6 +1356,35 @@ function setupFaceCanvas(){
     const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
     const[,cutPY]=W2F(0,cutLineY||0);
     const my=e.clientY-r.top;
+    const px_=e.clientX-r.left,py_=e.clientY-r.top;
+    // ── Cotes interactives (clic → focus champ correspondant)
+    if(FLAGS.cotes&&!wm.active){
+      const chit=COTE_HITS.find(c=>c.r>0&&Math.hypot(px_-c.x,py_-c.y)<c.r);
+      if(chit&&chit.inputId){const inp=document.getElementById(chit.inputId);if(inp){inp.focus();inp.select();}return;}
+    }
+    // ── Handles intermédiaires des fils déplaçables
+    if(!wm.active){
+      const whit=WIRES.flatMap(w=>w.pts.length>=4?[1,2].map(i=>({w,i})):[]).find(({w,i})=>{
+        const[mx,my2]=W2F(w.pts[i][0],w.pts[i][1]);
+        return Math.hypot(px_-mx,py_-my2)<8;
+      });
+      if(whit){
+        WIRES.forEach(w2=>w2.highlighted=w2===whit.w);
+        wireDragging={wire:whit.w,ptIdx:whit.i};
+        const gl=getLayout().zones.filter(z=>z.type==='goulH');
+        function onWPMove(ev){
+          const[,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
+          const g=gl.reduce((a,b)=>Math.abs(a.y+a.h/2-wy2)<Math.abs(b.y+b.h/2-wy2)?a:b);
+          const gY=g.y+g.h/2;
+          wireDragging.wire.pts[1]=[wireDragging.wire.pts[1][0],gY];
+          wireDragging.wire.pts[2]=[wireDragging.wire.pts[2][0],gY];
+          draw();updateWT();
+        }
+        function onWPUp(){wireDragging=null;document.removeEventListener('mousemove',onWPMove);document.removeEventListener('mouseup',onWPUp);draw();updateWT();}
+        document.addEventListener('mousemove',onWPMove);document.addEventListener('mouseup',onWPUp);
+        return;
+      }
+    }
     // Clic sur œils → toggle direction
     const sc=getSc(),cy=cutPY;
     const x0=58-18,x1=58+getLayout().w*sc+18;
@@ -1277,7 +1401,7 @@ function setupFaceCanvas(){
       const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
       if(sp&&nearest.placed!==wm.startP){
         const sec=SEC(),layout=getLayout();
-        const pts=routeWireStrict([sp.wx,sp.wy],[nearest.pt.wx,nearest.pt.wy],wm.startP,nearest.placed,layout);
+        const pts=routeWireStrict([sp.wx,sp.wy],[nearest.pt.wx,nearest.pt.wy],wm.startP,nearest.placed,layout,wm.startPtId,nearest.pt.id);
         wireCount++;
         WIRES.push({id:`W${wireCount}`,section:sec,startP:wm.startP,startPtId:wm.startPtId,endP:nearest.placed,endPtId:nearest.pt.id,pts,highlighted:false});
         wm.startP=null;wm.startPtId=null;draw();updateWT();
@@ -1323,7 +1447,7 @@ function setupFaceCanvas(){
       WIRES.filter(w=>w.startP===hit||w.endP===hit).forEach(w=>{
         const sp=getConnPts(w.startP).find(pt=>pt.id===w.startPtId);
         const ep=getConnPts(w.endP).find(pt=>pt.id===w.endPtId);
-        if(sp&&ep)w.pts=routeWireStrict([sp.wx,sp.wy],[ep.wx,ep.wy],w.startP,w.endP,layout);
+        if(sp&&ep)w.pts=routeWireStrict([sp.wx,sp.wy],[ep.wx,ep.wy],w.startP,w.endP,layout,w.startPtId,w.endPtId);
       });
       draw();
     }
@@ -1376,20 +1500,23 @@ function setupPlanCanvas(){
   cv.addEventListener('mousedown',e=>{
     const r=cv.getBoundingClientRect();
     const mx=e.clientX-r.left,my=e.clientY-r.top;
-    // Drag poignée gorge / profondeur
+    // Drag poignées gorge / profondeur / position rail Z
     if(planViewMeta&&planViewMeta.handles){
       const near=planViewMeta.handles.find(h=>Math.abs(my-h.canvasY)<7);
       if(near){
-        planDepthDrag={zoneLabel:near.zoneLabel};
-        const{scZ,OZ,minD,maxD}=near;
-        function onPD(ev){
-          const newY=ev.clientY-r.top-OZ;
-          const newD=Math.max(minD,Math.min(newY/scZ,maxD));
-          ZONE_DEPTHS[near.zoneLabel]=Math.round(newD);
-          draw();
+        planDepthDrag={zoneLabel:near.zoneLabel,type:near.type||'depth'};
+        const{scZ,OZ}=near;
+        if(near.type==='railZ'){
+          const{minZ,maxZ}=near;
+          const onPD2=ev=>{const nY=ev.clientY-r.top-OZ;RAIL_FRONT_Z[near.zoneLabel]=Math.round(Math.max(minZ,Math.min(nY/scZ,maxZ)));draw();};
+          const onPU2=()=>{planDepthDrag=null;document.removeEventListener('mousemove',onPD2);document.removeEventListener('mouseup',onPU2);draw();};
+          document.addEventListener('mousemove',onPD2);document.addEventListener('mouseup',onPU2);
+        } else {
+          const{minD,maxD}=near;
+          const onPD=ev=>{const nY=ev.clientY-r.top-OZ;ZONE_DEPTHS[near.zoneLabel]=Math.round(Math.max(minD,Math.min(nY/scZ,maxD)));draw();};
+          const onPU=()=>{planDepthDrag=null;document.removeEventListener('mousemove',onPD);document.removeEventListener('mouseup',onPU);draw();};
+          document.addEventListener('mousemove',onPD);document.addEventListener('mouseup',onPU);
         }
-        function onPU(){planDepthDrag=null;document.removeEventListener('mousemove',onPD);document.removeEventListener('mouseup',onPU);draw();}
-        document.addEventListener('mousemove',onPD);document.addEventListener('mouseup',onPU);
         return;
       }
     }
