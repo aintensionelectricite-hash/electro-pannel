@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "git add index.html; $d = git diff --cached --name-only; if ($d) { git commit -m 'autosave [auto]'; git push origin main }",
+            "timeout": 30,
+            "statusMessage": "Autosave vers GitHub..."
+          }
+        ]
+      }
+    ]
+  }
+}
