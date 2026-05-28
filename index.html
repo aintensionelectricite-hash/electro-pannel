@@ -51,6 +51,21 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
 .wlabel{font-weight:700;color:#185FA5}
 /* Info */
 #info{font-size:10px;color:#AAA8A4;padding:4px 10px;background:#fff;border-radius:7px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
+/* Onglets vues */
+#view-tabs{display:flex;gap:4px;flex-shrink:0;padding:2px 0}
+.vtab{font-size:10px;padding:3px 9px;border-radius:6px;border:.5px solid #D5D3CF;background:#FAFAFA;cursor:pointer;color:#555;font-weight:500;transition:all .1s}
+.vtab:hover{background:#EDE9E4}.vtab.on{background:#EBF3FF;color:#185FA5;border-color:#5B9FD4}
+/* Collapse panneaux */
+#lib{transition:width .18s,padding .18s}
+#lib.collapsed{width:22px;padding:4px 2px;overflow:hidden}
+#lib.collapsed>*:not(.panel-toggle){display:none}
+#wp{transition:width .18s}
+#wp.collapsed{width:22px;overflow:hidden}
+#wp.collapsed>*:not(.panel-toggle){display:none}
+.panel-toggle{width:100%;font-size:10px;padding:3px 4px;border-radius:5px;border:.5px solid #D5D3CF;background:#F0F0EC;cursor:pointer;color:#666;text-align:center;flex-shrink:0;writing-mode:horizontal-tb}
+#lib.collapsed .panel-toggle,#wp.collapsed .panel-toggle{writing-mode:vertical-lr;padding:6px 2px;border-radius:5px;font-size:9px}
+/* Plate drop zone highlight */
+canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
 </style>
 </head>
 <body>
@@ -94,8 +109,17 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
   <button class="tbtn red" onclick="clearAll()">Vider</button>
   <button class="tbtn" onclick="exportHTML()">HTML</button>
 </div>
+<div id="view-tabs">
+  <button class="vtab on" data-view="all" onclick="setView('all')">Toutes</button>
+  <button class="vtab" data-view="face" onclick="setView('face')">Vue face</button>
+  <button class="vtab" data-view="plan" onclick="setView('plan')">Coupe A-A</button>
+  <button class="vtab" data-view="plaques" onclick="setView('plaques')">Plaques PE</button>
+  <button class="vtab" data-view="porte" onclick="setView('porte')">Porte</button>
+</div>
 <div id="main">
-  <div id="lib"></div>
+  <div id="lib">
+    <button class="panel-toggle" onclick="toggleLib()" title="Replier/déplier bibliothèque">◀ Biblio</button>
+  </div>
   <div id="views-area">
     <canvas id="cv-face"></canvas>
     <canvas id="cv-plan" style="cursor:default"></canvas>
@@ -104,6 +128,7 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
     <canvas id="cv-door" style="display:none"></canvas>
   </div>
   <div id="wp">
+    <button class="panel-toggle" onclick="toggleWP()" title="Replier/déplier filerie">Filerie ▶</button>
     <div class="wp-hdr">
       <span class="wp-title">Filerie</span>
       <button class="wp-btn" onclick="exportCSV()">⬇ CSV</button>
@@ -197,9 +222,11 @@ let wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};
 let doorDragging=null,doorDragOX=0,doorDragOY=0;
 let doorHovered=null,doorSelected=null;
 let faceCursorWX=null;
-const ZONE_DEPTHS={};   // zone.label → profondeur personnalisée (mm)
-const RAIL_OFFSETS={};  // rail.label → décalage Y (mm)
+const ZONE_DEPTHS={};    // zone.label → profondeur section (mm)
+const RAIL_OFFSETS={};   // rail.label → décalage Y (mm)
+const RAIL_FRONT_Z={};   // rail.label → position Z face avant rail (mm depuis face avant panneau)
 let planViewMeta=null,planDepthDrag=null;
+let peLibDragActive=false; // PE en cours de drag depuis bibliothèque
 
 // ═══════════════════════════════════════════════════════════════════════
 // GETTERS
@@ -212,6 +239,34 @@ function THK() {return Math.max(60,+document.getElementById('thickness').value||
 function SEC() {return parseFloat(document.getElementById('sel-fil').value)||2.5}
 
 function tog(k){FLAGS[k]=!FLAGS[k];document.getElementById('btn-'+k).classList.toggle('on',FLAGS[k]);draw()}
+// ── Onglets de vues
+let currentView='all';
+function setView(v){
+  currentView=v;
+  document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  const face=v==='all'||v==='face',plan=v==='all'||v==='plan';
+  const plaques=v==='all'||v==='plaques',porte=(v==='all'||v==='porte')&&doorVisible;
+  document.getElementById('cv-face').style.display=face?'block':'none';
+  document.getElementById('cv-plan').style.display=plan?'block':'none';
+  document.getElementById('cv-top').style.display=plaques?'block':'none';
+  document.getElementById('cv-bot').style.display=plaques?'block':'none';
+  document.getElementById('cv-door').style.display=porte?'block':'none';
+}
+
+// ── Collapse panneaux
+function toggleLib(){
+  const el=document.getElementById('lib');
+  el.classList.toggle('collapsed');
+  const btn=el.querySelector('.panel-toggle');
+  btn.textContent=el.classList.contains('collapsed')?'▶':'◀ Biblio';
+}
+function toggleWP(){
+  const el=document.getElementById('wp');
+  el.classList.toggle('collapsed');
+  const btn=el.querySelector('.panel-toggle');
+  btn.textContent=el.classList.contains('collapsed')?'◀':'Filerie ▶';
+}
+
 function updateInfo(){
   const el=document.getElementById('info');
   if(selectedComp){const c=selectedComp.comp,rl=selectedComp.railRef;el.innerHTML=`<b style="color:#185FA5">${selectedComp.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm${rl?` &middot; ${rl.label}`:''}  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Supr: supprimer &middot; Ctrl+C: copier</span>`;}
