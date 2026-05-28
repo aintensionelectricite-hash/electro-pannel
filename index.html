@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAO Armoire Électrique S3D</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f4f3f0;color:#2C2C2A;font-size:13px}
+#app{display:flex;flex-direction:column;gap:8px;padding:10px;height:100vh}
+h1{font-size:15px;font-weight:500;color:#2C2C2A;padding:4px 0}
+#toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff;padding:7px 10px;border-radius:8px;border:0.5px solid #d3d1c7}
+#toolbar label{font-size:11px;color:#5F5E5A;display:flex;align-items:center;gap:3px}
+#toolbar select,#toolbar input[type=number]{font-size:11px;padding:2px 5px;border:0.5px solid #d3d1c7;border-radius:5px;background:#fff;width:62px}
+.tbtn{font-size:11px;padding:4px 10px;border-radius:6px;border:0.5px solid #d3d1c7;background:#fff;cursor:pointer;color:#2C2C2A}
+.tbtn:hover{background:#f1efe8}
+.tbtn.on{background:#E6F1FB;color:#185FA5;border-color:#185FA5}
+.sep{width:1px;height:20px;background:#d3d1c7;margin:0 2px}
+#main{display:flex;gap:8px;flex:1;min-height:0}
+#lib-panel{width:150px;flex-shrink:0;background:#fff;border:0.5px solid #d3d1c7;border-radius:8px;padding:8px;overflow-y:auto}
+#lib-panel h3{font-size:10px;font-weight:500;color:#888780;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.lib-item{border:0.5px solid #d3d1c7;border-radius:5px;margin-bottom:4px;padding:4px 6px;cursor:grab;background:#f4f3f0}
+.lib-item:hover{background:#E6F1FB;border-color:#185FA5}
+.li-name{font-size:11px;font-weight:500;color:#2C2C2A}
+.li-sub{font-size:10px;color:#888780}
+#views{display:flex;gap:8px;flex:1;align-items:flex-start;overflow:auto}
+canvas{display:block;border:0.5px solid #d3d1c7;border-radius:6px;background:#fff}
+#info-bar{font-size:10px;color:#888780;padding:4px 8px;background:#fff;border-radius:5px;border:0.5px solid #d3d1c7}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#5F5E5A;padding:4px 0}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div id="app">
+<div style="display:flex;align-items:center;justify-content:space-between">
+  <h1>CAO Armoire Électrique — Gamme Spacial S3D</h1>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#E6F1FB;border:1px solid #185FA5"></div>Fond</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAECE7;border:1px solid #D85A30"></div>Goulotte</div>
+    <div class="leg"><div class="leg-dot" style="background:#F5C4B3;border:1px solid #993C1D"></div>Rail 230V</div>
+    <div class="leg"><div class="leg-dot" style="background:#B5D4F4;border:1px solid #185FA5"></div>Rail 24V</div>
+    <div class="leg"><div class="leg-dot" style="background:#EAF3DE;border:1px solid #3B6D11"></div>Gorge</div>
+    <div class="leg"><div class="leg-dot" style="background:#FFF3DC;border:1px solid #E8A020"></div>Bornier</div>
+  </div>
+</div>
+<div id="toolbar">
+  <label>Modèle <select id="sel-model">
+    <option value="600x1200" selected>600×1200</option>
+    <option value="600x800">600×800</option>
+    <option value="800x1200">800×1200</option>
+    <option value="800x800">800×800</option>
+    <option value="600x600">600×600</option>
+  </select></label>
+  <label>Rails <input type="number" id="nb-rails" value="6" min="1" max="12"></label>
+  <label>Goul.H mm <input type="number" id="gh-h" value="40" min="20" max="80"></label>
+  <label>Esp.rail mm <input type="number" id="esp-rails" value="10" min="0" max="50" title="Marge verticale de chaque côté des rails DIN"></label>
+  <label>Ép. fond <input type="number" id="thickness" value="90" min="60" max="150"></label>
+  <div class="sep"></div>
+  <button class="tbtn on" id="btn-cotes" onclick="tog('cotes')">Cotations</button>
+  <button class="tbtn on" id="btn-capots" onclick="tog('capots')">Capots</button>
+  <button class="tbtn on" id="btn-gorge" onclick="tog('gorge')">Gorge</button>
+  <div class="sep"></div>
+  <label>Fil mm² <select id="sel-fil">
+    <option value="1.5">1.5</option>
+    <option value="2.5" selected>2.5</option>
+    <option value="6">6</option>
+    <option value="10">10</option>
+    <option value="16">16</option>
+  </select></label>
+  <button class="tbtn" id="btn-fil" onclick="togFil()">Tracer fil</button>
+  <button class="tbtn" onclick="clearComps()">Vider</button>
+  <button class="tbtn" onclick="exportHTML()">Exporter</button>
+</div>
+<div id="main">
+  <div id="lib-panel">
+    <h3>Composants</h3>
+    <div id="lib-items"></div>
+  </div>
+  <div id="views">
+    <canvas id="cv-face"></canvas>
+    <canvas id="cv-side"></canvas>
+  </div>
+</div>
+<div id="info-bar">Glisser depuis la bibliothèque · Déplacer = cliquer-glisser · Étiqueter = double-clic · Supprimer = clic droit · Snap 18 mm (iC60N) · Bornier = snap 6.2 mm · Fil = double-clic pour terminer</div>
+</div>
+<script>
+const MODELS={
+  '600x1200':{w:600,h:1200,m:30},
+  '600x800': {w:600,h:800, m:30},
+  '800x1200':{w:800,h:1200,m:30},
+  '800x800': {w:800,h:800, m:30},
+  '600x600': {w:600,h:600, m:25}
+};
+const FLAGS={cotes:true,capots:true,gorge:true};
+let drawingWire=false,wirePoints=[];
+let wireCount=0;
+const PLACED=[];
+let dragging=null,dragOffX=0,dragOffY=0,libGhost=null;
+const RAIL_H=35,RAIL_DEPTH_FROM_FACE=50;
+
+// Composants avec vraies dimensions Schneider
+const COMPS=[
+  // Sectionneurs
+  {id:'sect2p',  name:'Sectionneur 2P', sub:'iSW-NA 63A',    poles:2,  modW:36,  modH:85, type:'sect',        color:'#854F0B'},
+  {id:'sect4p',  name:'Sectionneur 4P', sub:'iSW-NA 100A',   poles:4,  modW:72,  modH:85, type:'sect',        color:'#854F0B'},
+  // Disjoncteurs iC60N Schneider (1P=18mm, 2P=36mm, 4P=72mm, H=85mm)
+  {id:'ic60n1p', name:'iC60N 1P',       sub:'6–63A 6kA',     poles:1,  modW:18,  modH:85, type:'disj',        color:'#185FA5'},
+  {id:'ic60n2p', name:'iC60N 2P',       sub:'6–63A 6kA',     poles:2,  modW:36,  modH:85, type:'disj',        color:'#185FA5'},
+  {id:'ic60n4p', name:'iC60N 4P',       sub:'6–63A 6kA',     poles:4,  modW:72,  modH:85, type:'disj',        color:'#185FA5'},
+  // Différentiels
+  {id:'diff2p',  name:'Diff. iID 2P',   sub:'40A 30mA',      poles:2,  modW:36,  modH:90, type:'diff',        color:'#0F6E56'},
+  {id:'diff4p',  name:'Diff. iID 4P',   sub:'40A 30mA',      poles:4,  modW:72,  modH:90, type:'diff',        color:'#0F6E56'},
+  // Peignes
+  {id:'peigne12',name:'Peigne 12P',     sub:'pas 9 mm',      poles:12, modW:108, modH:10, type:'peigne',      color:'#993C1D'},
+  {id:'peigne24',name:'Peigne 24P',     sub:'pas 9 mm',      poles:24, modW:216, modH:10, type:'peigne',      color:'#993C1D'},
+  // Répartiteur
+  {id:'repartiteur',name:'Répart. 4B',  sub:'4 barreaux',    poles:4,  modW:60,  modH:40, type:'repartiteur', color:'#534AB7'},
+  // Bornier Schneider Linergy TB (larg. 6.2 mm, haut. 55 mm)
+  {id:'bornier', name:'Bornier TB',     sub:'Linergy 6.2 mm',poles:1,  modW:6.2, modH:55, type:'bornier',     color:'#E8A020'},
+];
+
+function tog(k){FLAGS[k]=!FLAGS[k];document.getElementById('btn-'+k).classList.toggle('on',FLAGS[k]);draw()}
+function togFil(){drawingWire=!drawingWire;wirePoints=[];document.getElementById('btn-fil').classList.toggle('on',drawingWire);draw()}
+function clearComps(){if(confirm('Vider tous les composants et fils ?')){PLACED.length=0;wireCount=0;draw()}}
+
+function GH_H(){return Math.max(20,parseInt(document.getElementById('gh-h').value)||40)}
+function THICK(){return Math.max(60,parseInt(document.getElementById('thickness').value)||90)}
+function ESP_RAILS(){return Math.max(0,parseInt(document.getElementById('esp-rails').value)||10)}
+
+function getLayout(){
+  const model=MODELS[document.getElementById('sel-model').value];
+  const nbRails=Math.max(1,parseInt(document.getElementById('nb-rails').value)||6);
+  const ghH=GH_H();const espR=ESP_RAILS();
+  const{w,h,m}=model;
+  const intW=w-2*m,intH=h-2*m;
+  const zones=[];let cy=m;
+  for(let i=0;i<nbRails+1;i++){
+    zones.push({type:'goulH',y:cy,h:ghH,idx:i});cy+=ghH;
+    if(i<nbRails){
+      cy+=espR;                                          // marge au-dessus du rail
+      zones.push({type:'rail',y:cy,h:RAIL_H,idx:i});cy+=RAIL_H;
+      cy+=espR;                                          // marge en-dessous du rail
+    }
+  }
+  return{model,nbRails,ghH,espR,intW,intH,zones,m,w,h};
+}
+
+function getScaleFace(){
+  const{w,h}=MODELS[document.getElementById('sel-model').value];
+  return Math.min(320/w,600/h,0.65);
+}
+function worldToFace(wx,wy){const sc=getScaleFace();return[50+wx*sc,25+wy*sc]}
+function faceToWorld(px,py){const sc=getScaleFace();return[(px-50)/sc,(py-25)/sc]}
+function wireRadius(sec){const map={'1.5':1.4,'2.5':1.8,'6':2.8,'10':3.6,'16':4.5};return(map[String(sec)]||2)/2}
+
+// Grille de snap horizontale selon type de composant
+function snapGrid(comp){
+  if(comp.type==='bornier')return comp.modW;   // 6.2 mm par bornier Linergy
+  if(comp.type==='disj'||comp.type==='diff'||comp.type==='sect')return 18; // module DIN iC60N
+  return 1;
+}
+
+// Snap vertical sur rail + snap horizontal sur grille module
+function applySnap(wx,wy,comp,layout){
+  const{zones,m,intW}=layout;
+  const threshold=comp.type==='bornier'?22:28;
+  const rail=zones.find(z=>z.type==='rail'&&Math.abs(wy-(z.y+(RAIL_H-comp.modH)/2))<threshold);
+  const finalWy=rail?rail.y+(RAIL_H-comp.modH)/2:wy;
+  let finalWx=wx;
+  if(rail){
+    const grid=snapGrid(comp);
+    finalWx=m+Math.round((wx-m)/grid)*grid;
+  }
+  finalWx=Math.max(m,Math.min(finalWx,m+intW-comp.modW));
+  return{wx:finalWx,wy:finalWy,onRail:!!rail};
+}
+
+// Auto-label à la pose
+function autoLabel(comp){
+  if(comp.type==='bornier'){
+    const n=PLACED.filter(p=>p.comp&&p.comp.type==='bornier').length+1;
+    return`B${n}`;
+  }
+  return comp.name;
+}
+
+function rr(ctx,x,y,w,h,r){
+  r=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function draw(){
+  const layout=getLayout();
+  const{model,intW,intH,zones,m,w,h}=layout;
+  const sc=getScaleFace();const thick=THICK();
+  const C={
+    fond:'#E6F1FB',fondS:'#185FA5',
+    goulH:'#FAECE7',goulHS:'#D85A30',
+    capot:'#EEEDFE',capotS:'#534AB7',
+    railHT:'#F5C4B3',railBT:'#B5D4F4',railS:'#0F6E56',
+    gorge:'#EAF3DE',gorgeS:'#3B6D11',
+    hole:'#888780',cote:'#0F6E56',coteS:'#1D9E75',
+    txt:'#2C2C2A',txtS:'#5F5E5A'
+  };
+  const FW=Math.round(w*sc)+110,FH=Math.round(h*sc)+70;
+  const cv=document.getElementById('cv-face');
+  cv.width=FW;cv.height=FH;cv.style.width=FW+'px';cv.style.height=FH+'px';
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,FW,FH);
+  function sx(v){return 50+v*sc}function sy(v){return 25+v*sc}function sw(v){return v*sc}
+  // Fond armoire
+  ctx.fillStyle=C.fond;ctx.strokeStyle=C.fondS;ctx.lineWidth=1.5;
+  rr(ctx,sx(0),sy(0),sw(w),sw(h),6);ctx.fill();ctx.stroke();
+  // Zones (goulottes + rails)
+  zones.forEach(z=>{
+    if(z.type==='goulH'){
+      ctx.fillStyle=C.goulH;ctx.strokeStyle=C.goulHS;ctx.lineWidth=0.7;
+      rr(ctx,sx(m),sy(z.y),sw(intW),sw(z.h),2);ctx.fill();ctx.stroke();
+      if(FLAGS.capots){
+        ctx.fillStyle=C.capot;ctx.strokeStyle=C.capotS;ctx.lineWidth=0.4;
+        rr(ctx,sx(m+3),sy(z.y+3),sw(intW-6),sw(z.h-6),1);ctx.fill();ctx.stroke();
+      }
+      const fs=Math.max(8,Math.round(sw(z.h)*0.55));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#854F0B';ctx.textAlign='left';
+      ctx.fillText(`G${z.idx+1}`,sx(m+5),sy(z.y+z.h/2)+fs*0.35);
+    } else if(z.type==='rail'){
+      const isHT=z.idx%2===0;
+      ctx.fillStyle=isHT?C.railHT:C.railBT;ctx.strokeStyle=C.railS;ctx.lineWidth=0.7;
+      rr(ctx,sx(m),sy(z.y),sw(intW),sw(z.h),2);ctx.fill();ctx.stroke();
+      if(FLAGS.gorge){
+        ctx.fillStyle=C.gorge;ctx.strokeStyle=C.gorgeS;ctx.lineWidth=0.4;
+        rr(ctx,sx(m+3),sy(z.y+3),sw(intW-6),sw(z.h-6),1);ctx.fill();ctx.stroke();
+      }
+      // Perçages rail DIN 35 mm (pas 25 mm)
+      for(let px=m+18;px<m+intW-10;px+=25){
+        ctx.fillStyle=C.hole;
+        rr(ctx,sx(px-3),sy(z.y+RAIL_H/2-6),sw(6),sw(12),1);ctx.fill();
+      }
+      const fs=Math.max(8,Math.round(sw(z.h)*0.45));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle=isHT?'#712B13':'#0C447C';ctx.textAlign='left';
+      ctx.fillText(`R${z.idx+1}`,sx(m+5),sy(z.y+z.h/2)+fs*0.35);
+      ctx.textAlign='right';ctx.fillStyle='#5F5E5A';
+      ctx.fillText(isHT?'230V/400V':'24V BT',sx(m+intW-5),sy(z.y+z.h/2)+fs*0.35);
+    }
+  });
+  // Composants et fils placés
+  PLACED.forEach(p=>{if(p.type==='wire'){drawWire(ctx,p,sc);return;}drawComp(ctx,p,sc,C);});
+  // Fil en cours de traçage
+  if(drawingWire&&wirePoints.length>1){
+    ctx.strokeStyle='#854F0B';
+    ctx.lineWidth=Math.max(1.5,wireRadius(parseFloat(document.getElementById('sel-fil').value))*sc*2);
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+    wirePoints.forEach((p,i)=>{const[px,py]=worldToFace(p[0],p[1]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+    ctx.stroke();ctx.lineCap='butt';
+  }
+  if(FLAGS.cotes)drawCotes(ctx,sx,sy,sw,w,h,m,intW,zones,C,sc,layout.espR);
+  // Ghost snap preview lors du drag depuis la bibliothèque
+  if(libGhost){
+    const c=libGhost.comp;
+    const[wx0,wy0]=faceToWorld(libGhost.x,libGhost.y);
+    const{wx,wy,onRail}=applySnap(wx0-c.modW/2,wy0-c.modH/2,c,layout);
+    const gx=50+wx*sc,gy=25+wy*sc;
+    ctx.fillStyle=onRail?'rgba(24,95,165,0.15)':'rgba(55,138,221,0.12)';
+    ctx.strokeStyle=onRail?'#185FA5':'#378ADD';
+    ctx.lineWidth=1;ctx.setLineDash([3,2]);
+    rr(ctx,gx,gy,c.modW*sc,c.modH*sc,3);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+  }
+  drawSideView(zones,m,w,h,intW,thick,sc,C,FLAGS);
+}
+
+function drawWire(ctx,p,sc){
+  if(!p.points||p.points.length<2)return;
+  ctx.strokeStyle='#854F0B';
+  ctx.lineWidth=Math.max(1,wireRadius(p.section)*sc*2);
+  ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+  p.points.forEach((pt,i)=>{const[px,py]=worldToFace(pt[0],pt[1]);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});
+  ctx.stroke();ctx.lineCap='butt';
+  // Étiquette Wn + section
+  const fs=Math.max(7,Math.round(8*getScaleFace()*3));
+  ctx.font=`bold ${fs}px system-ui`;ctx.fillStyle='#5A2E00';ctx.textAlign='left';
+  const[lx,ly]=worldToFace(p.points[0][0],p.points[0][1]);
+  ctx.fillText(`${p.label} ${p.section}mm²`,lx+3,ly-3);
+}
+
+function drawComp(ctx,p,sc,C){
+  const c=p.comp;
+  const x=50+p.wx*sc,y=25+p.wy*sc;
+  const cw=c.modW*sc,ch=c.modH*sc;
+  if(p===dragging)ctx.globalAlpha=0.65;
+  if(c.type==='bornier'){
+    // Bornier Linergy : corps orange, trou de serrage, vis centrale
+    ctx.fillStyle='#FFF3DC';ctx.strokeStyle='#E8A020';ctx.lineWidth=Math.max(0.5,cw*0.08);
+    rr(ctx,x,y,cw,ch,Math.max(1,cw*0.15));ctx.fill();ctx.stroke();
+    // Languettes de connexion haut/bas
+    ctx.fillStyle='#E8A020';
+    rr(ctx,x+cw*0.1,y+ch*0.04,cw*0.8,ch*0.13,1);ctx.fill();
+    rr(ctx,x+cw*0.1,y+ch*0.83,cw*0.8,ch*0.13,1);ctx.fill();
+    // Vis de serrage
+    ctx.fillStyle='#B07010';
+    ctx.beginPath();ctx.arc(x+cw/2,y+ch*0.5,Math.max(1,cw*0.3),0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(0.3,cw*0.05);
+    ctx.beginPath();ctx.moveTo(x+cw*0.25,y+ch*0.5);ctx.lineTo(x+cw*0.75,y+ch*0.5);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+cw/2,y+ch*0.35);ctx.lineTo(x+cw/2,y+ch*0.65);ctx.stroke();
+    // Label Bn si canvas assez large
+    if(cw>7){
+      const fs=Math.max(5,Math.round(ch*0.11));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#5A3A00';ctx.textAlign='center';
+      ctx.fillText(p.label||'B?',x+cw/2,y+ch*0.28);
+    }
+  } else {
+    ctx.fillStyle=c.color+'22';ctx.strokeStyle=c.color;ctx.lineWidth=1;
+    rr(ctx,x,y,cw,ch,3);ctx.fill();ctx.stroke();
+    if(c.type==='disj'||c.type==='diff'||c.type==='sect'){
+      const pw=cw/c.poles;
+      for(let pi=0;pi<c.poles;pi++){
+        const px=x+pi*pw;
+        ctx.fillStyle='#D3D1C7';ctx.strokeStyle=c.color;ctx.lineWidth=0.4;
+        rr(ctx,px+pw*0.15,y+ch*0.07,pw*0.7,ch*0.2,2);ctx.fill();ctx.stroke();
+        rr(ctx,px+pw*0.15,y+ch*0.72,pw*0.7,ch*0.2,2);ctx.fill();ctx.stroke();
+        if(c.type!=='sect'){
+          ctx.fillStyle=c.type==='diff'?'#9FE1CB':'#F5C4B3';
+          ctx.strokeStyle=c.type==='diff'?'#0F6E56':'#993C1D';ctx.lineWidth=0.4;
+          rr(ctx,px+pw*0.22,y+ch*0.36,pw*0.56,ch*0.26,2);ctx.fill();ctx.stroke();
+        }
+        if(c.type==='disj'){
+          ctx.fillStyle='#185FA5';ctx.beginPath();
+          ctx.arc(px+pw/2,y+ch*0.49,Math.max(1.5,pw*0.12),0,Math.PI*2);ctx.fill();
+        }
+      }
+      // Étiquette (label personnalisé ou nom composant)
+      const fs=Math.max(6,Math.round(Math.min(cw,36)*0.13));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle=c.color;ctx.textAlign='center';
+      ctx.fillText(p.label||c.name,x+cw/2,y+ch-4);
+    } else if(c.type==='peigne'){
+      ctx.fillStyle='#F0997B';ctx.strokeStyle='#993C1D';ctx.lineWidth=0.5;
+      rr(ctx,x,y,cw,ch,1);ctx.fill();ctx.stroke();
+      const pw=cw/c.poles;
+      for(let pi=0;pi<c.poles;pi++){
+        ctx.fillStyle='#fff';ctx.beginPath();
+        ctx.arc(x+pi*pw+pw/2,y+ch/2,Math.max(1.5,ch*0.28),0,Math.PI*2);ctx.fill();
+      }
+    } else if(c.type==='repartiteur'){
+      ctx.fillStyle='#AFA9EC';ctx.strokeStyle='#534AB7';ctx.lineWidth=0.7;
+      rr(ctx,x,y,cw,ch,3);ctx.fill();ctx.stroke();
+      const bh=ch/c.poles;
+      for(let bi=0;bi<c.poles;bi++){
+        ctx.fillStyle='#D3D1C7';
+        rr(ctx,x+4,y+bi*bh+2,cw-8,bh-4,1);ctx.fill();
+      }
+      const fs=Math.max(7,Math.round(cw*0.13));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#26215C';ctx.textAlign='center';
+      ctx.fillText('Rép.',x+cw/2,y+ch/2+fs*0.35);
+    }
+    // Label externe si différent du nom par défaut
+    if((c.type==='peigne'||c.type==='repartiteur')&&p.label&&p.label!==c.name){
+      const fs=Math.max(7,Math.round(cw*0.12));
+      ctx.font=`${fs}px system-ui`;ctx.fillStyle=C.txt;ctx.textAlign='center';
+      ctx.fillText(p.label,x+cw/2,y-3);
+    }
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawCotes(ctx,sx,sy,sw,w,h,m,intW,zones,C,sc,espR){
+  ctx.strokeStyle=C.coteS;ctx.fillStyle=C.cote;
+  function dimH(x,y1,y2,label,big){
+    const fs=big?Math.max(8,Math.round(sc*24)):Math.max(7,Math.round(sc*21));
+    ctx.lineWidth=big?0.8:0.4;ctx.setLineDash(big?[]:[2,2]);
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x-3,y1);ctx.lineTo(x+3,y1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x-3,y2);ctx.lineTo(x+3,y2);ctx.stroke();
+    ctx.save();ctx.translate(x-(big?10:7),(y1+y2)/2);ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';ctx.font=`${big?'500 ':''}${fs}px system-ui`;
+    ctx.fillStyle=C.cote;ctx.fillText(label,0,0);ctx.restore();
+  }
+  function dimW(y,x1,x2,label,big){
+    const fs=big?Math.max(8,Math.round(sc*24)):Math.max(7,Math.round(sc*21));
+    ctx.lineWidth=big?0.8:0.4;ctx.setLineDash(big?[]:[2,2]);
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x1,y-3);ctx.lineTo(x1,y+3);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y-3);ctx.lineTo(x2,y+3);ctx.stroke();
+    ctx.textAlign='center';ctx.font=`${big?'500 ':''}${fs}px system-ui`;
+    ctx.fillStyle=C.cote;ctx.fillText(label,(x1+x2)/2,y-(big?6:4));
+  }
+  dimW(sy(0)-24,sx(0),sx(w),`${w} mm`,true);
+  dimW(sy(0)-13,sx(m),sx(m+intW),`${intW} mm`,false);
+  dimH(sx(0)-32,sy(0),sy(h),`${h} mm`,true);
+  const ex=sx(w)+20;
+  zones.forEach(z=>{dimH(ex+(z.type==='rail'?14:0),sy(z.y),sy(z.y+z.h),`${z.h}`,false);});
+  // Afficher l'espacement si > 0
+  if(espR>0){
+    const fs=Math.max(6,Math.round(sc*19));
+    ctx.font=`${fs}px system-ui`;ctx.fillStyle='#AAA89A';ctx.textAlign='left';
+    ctx.fillText(`esp.${espR}mm`,ex+2,sy(m+GH_H()+espR/2)+fs*0.35);
+  }
+}
+
+function drawSideView(zones,m,w,h,intW,thick,sc,C,FLAGS){
+  const SCALE_S=Math.min(75/thick,480/h,0.5);
+  const SW=Math.round(thick*SCALE_S)+80,SH=Math.round(h*SCALE_S)+65;
+  const cv=document.getElementById('cv-side');
+  cv.width=SW;cv.height=SH;cv.style.width=SW+'px';cv.style.height=SH+'px';
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,SW,SH);
+  const OX=32,OY=20;
+  function sx(v){return OX+v*SCALE_S}function sy(v){return OY+v*SCALE_S}function sw(v){return v*SCALE_S}
+  ctx.fillStyle=C.fond;ctx.strokeStyle=C.fondS;ctx.lineWidth=1.2;
+  rr(ctx,OX,OY,sw(thick),sw(h),3);ctx.fill();ctx.stroke();
+  const GOUL_DEPTH=thick-12;const GORGE_W=8;
+  zones.forEach(z=>{
+    const zy=sy(z.y),zh=sw(z.h);
+    if(z.type==='goulH'){
+      ctx.fillStyle=C.goulH;ctx.strokeStyle=C.goulHS;ctx.lineWidth=0.6;
+      rr(ctx,OX,zy,sw(GOUL_DEPTH),zh,1);ctx.fill();ctx.stroke();
+      if(FLAGS.capots){
+        ctx.fillStyle=C.capot;ctx.strokeStyle=C.capotS;ctx.lineWidth=0.4;
+        rr(ctx,sx(GOUL_DEPTH),zy+2,sw(10),zh-4,1);ctx.fill();ctx.stroke();
+      }
+    } else if(z.type==='rail'){
+      const isHT=z.idx%2===0;const rDepth=RAIL_DEPTH_FROM_FACE;
+      if(FLAGS.gorge){
+        ctx.fillStyle=C.gorge;ctx.strokeStyle=C.gorgeS;ctx.lineWidth=0.4;
+        rr(ctx,sx(rDepth-GORGE_W),sy(z.y-2),sw(GORGE_W*2+z.h),sw(z.h+4),1);ctx.fill();ctx.stroke();
+      }
+      ctx.fillStyle=isHT?C.railHT:C.railBT;ctx.strokeStyle=C.railS;ctx.lineWidth=0.7;
+      rr(ctx,sx(rDepth-3),sy(z.y),sw(z.h+6),sw(z.h),2);ctx.fill();ctx.stroke();
+      // Câble vue de côté (goulotte → rail)
+      const wsec=parseFloat(document.getElementById('sel-fil').value||'2.5');
+      ctx.strokeStyle=isHT?'#D85A30':'#185FA5';
+      ctx.lineWidth=Math.max(1.5,wireRadius(wsec)*SCALE_S*2);
+      ctx.lineCap='round';
+      const bend=Math.max(sw(8),wireRadius(wsec)*SCALE_S*2+sw(4));
+      ctx.beginPath();
+      ctx.moveTo(OX+sw(GOUL_DEPTH),sy(z.y+z.h/2));
+      ctx.lineTo(sx(rDepth-3)-bend,sy(z.y+z.h/2));
+      ctx.arcTo(sx(rDepth-3),sy(z.y+z.h/2),sx(rDepth-3),sy(z.y+z.h/2)-bend,bend);
+      ctx.lineTo(sx(rDepth-3),sy(z.y+2));ctx.stroke();ctx.lineCap='butt';
+    }
+  });
+  const fs=Math.max(7,Math.round(8*SCALE_S*3));
+  ctx.font=`500 ${fs}px system-ui`;ctx.textAlign='center';
+  ctx.fillStyle='#712B13';
+  ctx.save();ctx.translate(sx(thick)+14,sy(h/2));ctx.rotate(Math.PI/2);ctx.fillText('230V/400V',0,0);ctx.restore();
+  ctx.fillStyle='#0C447C';
+  ctx.save();ctx.translate(OX-12,sy(h/2));ctx.rotate(-Math.PI/2);ctx.fillText('24V BT',0,0);ctx.restore();
+  if(FLAGS.cotes){
+    ctx.strokeStyle=C.coteS;ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(OX-10,OY);ctx.lineTo(OX-10,sy(h));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX-14,OY);ctx.lineTo(OX-6,OY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX-14,sy(h));ctx.lineTo(OX-6,sy(h));ctx.stroke();
+    ctx.save();ctx.translate(OX-22,sy(h/2));ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle=C.cote;ctx.fillText(`${h} mm`,0,0);ctx.restore();
+    ctx.beginPath();ctx.moveTo(OX,sy(h)+14);ctx.lineTo(sx(thick),sy(h)+14);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX,sy(h)+10);ctx.lineTo(OX,sy(h)+18);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(sx(thick),sy(h)+10);ctx.lineTo(sx(thick),sy(h)+18);ctx.stroke();
+    ctx.textAlign='center';ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle=C.cote;
+    ctx.fillText(`ép. ${thick} mm`,sx(thick/2),sy(h)+27);
+    ctx.setLineDash([2,2]);ctx.lineWidth=0.4;
+    ctx.beginPath();ctx.moveTo(sx(RAIL_DEPTH_FROM_FACE),OY);ctx.lineTo(sx(RAIL_DEPTH_FROM_FACE),sy(h)+14);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(sx(RAIL_DEPTH_FROM_FACE),sy(h)+10);ctx.lineTo(sx(RAIL_DEPTH_FROM_FACE),sy(h)+18);ctx.stroke();
+    ctx.font=`${Math.max(6,fs-1)}px system-ui`;ctx.fillStyle=C.cote;
+    ctx.fillText('50 mm',sx(RAIL_DEPTH_FROM_FACE/2),sy(h)+33);
+  }
+  ctx.textAlign='center';ctx.font=`${Math.max(7,fs)}px system-ui`;ctx.fillStyle='#5F5E5A';
+  ctx.fillText('Vue de côté',sx(thick/2),sy(h)+46);
+}
+
+function buildLib(){
+  const el=document.getElementById('lib-items');el.innerHTML='';
+  COMPS.forEach(c=>{
+    const d=document.createElement('div');d.className='lib-item';
+    d.innerHTML=`<div class="li-name">${c.name}</div><div class="li-sub">${c.sub}</div>`;
+    d.addEventListener('mousedown',e=>{e.preventDefault();startLibDrag(e,c)});
+    el.appendChild(d);
+  });
+}
+
+function startLibDrag(e,comp){
+  const cv=document.getElementById('cv-face');const rect=cv.getBoundingClientRect();
+  function onMove(ev){libGhost={comp,x:ev.clientX-rect.left,y:ev.clientY-rect.top};draw()}
+  function onUp(ev){
+    const px=ev.clientX-rect.left,py=ev.clientY-rect.top;
+    if(px>0&&px<cv.width&&py>0&&py<cv.height){
+      const layout=getLayout();
+      const[wx0,wy0]=faceToWorld(px,py);
+      const{wx,wy}=applySnap(wx0-comp.modW/2,wy0-comp.modH/2,comp,layout);
+      PLACED.push({comp,wx,wy,type:'comp',label:autoLabel(comp)});
+    }
+    libGhost=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();
+  }
+  document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+}
+
+function setupFaceCanvas(){
+  const cv=document.getElementById('cv-face');
+  cv.addEventListener('mousedown',e=>{
+    if(drawingWire){
+      const r=cv.getBoundingClientRect();
+      const[wx,wy]=faceToWorld(e.clientX-r.left,e.clientY-r.top);
+      wirePoints.push([wx,wy]);draw();return;
+    }
+    const r=cv.getBoundingClientRect();
+    const[wx,wy]=faceToWorld(e.clientX-r.left,e.clientY-r.top);
+    const hit=PLACED.slice().reverse().find(p=>{
+      if(p.type==='wire')return false;
+      const c=p.comp;
+      return wx>=p.wx&&wx<=p.wx+c.modW&&wy>=p.wy&&wy<=p.wy+c.modH;
+    });
+    if(hit){
+      dragging=hit;dragOffX=wx-hit.wx;dragOffY=wy-hit.wy;
+      function onMove(ev){
+        const[wx2,wy2]=faceToWorld(ev.clientX-r.left,ev.clientY-r.top);
+        const layout=getLayout();
+        const{wx:nx,wy:ny}=applySnap(wx2-dragOffX,wy2-dragOffY,hit.comp,layout);
+        hit.wx=nx;hit.wy=ny;draw();
+      }
+      function onUp(){dragging=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();}
+      document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+    }
+  });
+  cv.addEventListener('dblclick',e=>{
+    // Terminer le traçage d'un fil
+    if(drawingWire&&wirePoints.length>1){
+      wireCount++;
+      PLACED.push({
+        type:'wire',
+        points:[...wirePoints],
+        section:parseFloat(document.getElementById('sel-fil').value),
+        label:`W${wireCount}`
+      });
+      wirePoints=[];drawingWire=false;
+      document.getElementById('btn-fil').classList.remove('on');draw();return;
+    }
+    const r=cv.getBoundingClientRect();
+    const[wx,wy]=faceToWorld(e.clientX-r.left,e.clientY-r.top);
+    const idx=PLACED.findIndex(p=>{
+      if(p.type==='wire')return false;
+      const c=p.comp;
+      return wx>=p.wx&&wx<=p.wx+c.modW&&wy>=p.wy&&wy<=p.wy+c.modH;
+    });
+    if(idx>=0){const lbl=prompt('Étiquette :',PLACED[idx].label||'');if(lbl!==null){PLACED[idx].label=lbl;draw();}}
+  });
+  cv.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    const r=cv.getBoundingClientRect();
+    const[wx,wy]=faceToWorld(e.clientX-r.left,e.clientY-r.top);
+    const idx=PLACED.findIndex(p=>{
+      if(p.type==='wire')return false;
+      const c=p.comp;
+      return wx>=p.wx&&wx<=p.wx+c.modW&&wy>=p.wy&&wy<=p.wy+c.modH;
+    });
+    if(idx>=0&&confirm('Supprimer ce composant ?')){PLACED.splice(idx,1);draw();}
+  });
+}
+
+function exportHTML(){
+  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cao-armoire.html';a.click();
+}
+
+['sel-model','nb-rails','gh-h','esp-rails','thickness','sel-fil'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',draw);
+});
+buildLib();setupFaceCanvas();draw();
+</script>
+</body>
+</html>
