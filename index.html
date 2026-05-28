@@ -6,51 +6,50 @@
 <title>CAO Armoire Électrique S3D</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#E9E7E4;color:#1A1A18;font-size:13px;-webkit-font-smoothing:antialiased;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#E8E6E3;color:#1A1A18;font-size:13px;-webkit-font-smoothing:antialiased;overflow:hidden}
 #app{display:flex;flex-direction:column;gap:8px;padding:10px;height:100vh}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
-h1{font-size:14px;font-weight:600;color:#111;letter-spacing:-.01em}
-/* toolbar */
+.hdr{display:flex;align-items:center;justify-content:space-between}
+h1{font-size:14px;font-weight:600;letter-spacing:-.01em}
+/* Toolbar */
 #tb{display:flex;gap:5px;flex-wrap:wrap;align-items:center;background:#fff;padding:7px 10px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.09)}
 #tb label{font-size:11px;color:#555;display:flex;align-items:center;gap:3px;white-space:nowrap}
-#tb select,#tb input[type=number]{font-size:11px;padding:3px 5px;border:.5px solid #D8D6D2;border-radius:6px;background:#FAFAFA;color:#1A1A18}
-#sel-model{width:90px}
-.n48{width:48px}.n55{width:55px}
-.tbtn{font-size:11px;padding:4px 10px;border-radius:7px;border:.5px solid #D8D6D2;background:#FAFAFA;cursor:pointer;color:#1A1A18;font-weight:500;white-space:nowrap;transition:background .1s}
-.tbtn:hover{background:#EDE9E4}
-.tbtn.on{background:#EBF3FF;color:#185FA5;border-color:#5B9FD4}
+#tb select,#tb input[type=number]{font-size:11px;padding:3px 5px;border:.5px solid #D5D3CF;border-radius:6px;background:#FAFAFA;color:#1A1A18}
+#sel-model{width:90px}.n48{width:48px}
+.tbtn{font-size:11px;padding:4px 10px;border-radius:7px;border:.5px solid #D5D3CF;background:#FAFAFA;cursor:pointer;color:#1A1A18;font-weight:500;white-space:nowrap;transition:background .1s}
+.tbtn:hover{background:#EDE9E4}.tbtn.on{background:#EBF3FF;color:#185FA5;border-color:#5B9FD4}
 .tbtn.red{color:#B92B27}.tbtn.red:hover{background:#FFF0EF;border-color:#E07070}
-.tbtn.wire-on{background:#FFF3DC;color:#A06000;border-color:#D4A000}
-.sep{width:1px;height:20px;background:#D8D6D2;margin:0 1px;flex-shrink:0}
-/* layout */
+.tbtn.wire-on{background:#FFF5E0;color:#A06000;border-color:#D4A000}
+.tbtn.door-on{background:#F0EBF8;color:#6B3DA6;border-color:#9B6DD6}
+.sep{width:1px;height:20px;background:#D5D3CF;margin:0 1px;flex-shrink:0}
+/* Layout */
 #main{display:flex;gap:8px;flex:1;min-height:0}
-/* lib */
+/* Library */
 #lib{width:158px;flex-shrink:0;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.09);padding:8px;overflow-y:auto;display:flex;flex-direction:column}
-.lib-sec{font-size:9px;font-weight:700;color:#BBBAB5;text-transform:uppercase;letter-spacing:.07em;margin:9px 0 4px;padding-bottom:3px;border-bottom:1px solid #EEECEA;flex-shrink:0}
+.lib-sec{font-size:9px;font-weight:700;color:#BBBBBB;text-transform:uppercase;letter-spacing:.07em;margin:9px 0 4px;padding-bottom:3px;border-bottom:1px solid #EEECEA;flex-shrink:0}
 .lib-sec:first-child{margin-top:0}
-.lib-item{border:.5px solid #E8E7E3;border-radius:7px;margin-bottom:3px;padding:4px 6px;cursor:grab;background:#FAFAF8;display:flex;align-items:center;gap:5px;transition:all .1s;flex-shrink:0}
+.lib-item{border:.5px solid #E5E4E0;border-radius:7px;margin-bottom:3px;padding:4px 6px;cursor:grab;background:#FAFAF8;display:flex;align-items:center;gap:5px;transition:all .1s;flex-shrink:0}
 .lib-item:hover{background:#EBF3FF;border-color:#5B9FD4}
 .li-chip{width:6px;border-radius:2px;align-self:stretch;flex-shrink:0}
 .li-info{flex:1;min-width:0}
-.li-name{font-size:11px;font-weight:600;color:#1A1A18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .li-sub{font-size:9px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-/* views area */
+/* Views */
 #views-area{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow:auto}
-canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.08);background:#fff;cursor:default}
-/* wiring panel */
-#wp{width:220px;flex-shrink:0;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.09);display:flex;flex-direction:column;overflow:hidden}
-.wp-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 6px;border-bottom:.5px solid #EEECEA;flex-shrink:0}
-.wp-title{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em}
-.wp-csv{font-size:10px;padding:3px 8px;border-radius:5px;border:.5px solid #D8D6D2;background:#FAFAFA;cursor:pointer;color:#444;font-weight:500}
-.wp-csv:hover{background:#EDE9E4}
+canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 0 .5px rgba(0,0,0,.08);background:#fff}
+/* Wiring panel */
+#wp{width:224px;flex-shrink:0;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.09);display:flex;flex-direction:column;overflow:hidden}
+.wp-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 10px 5px;border-bottom:.5px solid #EEECEA;flex-shrink:0}
+.wp-title{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em}
+.wp-btn{font-size:10px;padding:2px 7px;border-radius:5px;border:.5px solid #D5D3CF;background:#FAFAFA;cursor:pointer;color:#444;font-weight:500}
+.wp-btn:hover{background:#EDE9E4}
 #wt-wrap{flex:1;overflow-y:auto}
 #wt{width:100%;border-collapse:collapse;font-size:10px}
-#wt th{background:#F4F3F0;color:#777;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:4px 5px;text-align:left;border-bottom:.5px solid #E0DEDB;position:sticky;top:0}
-#wt td{padding:4px 5px;border-bottom:.5px solid #F0EFEB;color:#333;max-width:55px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#wt tr.hl td{background:#FFF3DC;color:#7A4800}
+#wt th{background:#F4F3F0;color:#777;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.03em;padding:3px 4px;text-align:left;border-bottom:.5px solid #E0DEDB;position:sticky;top:0;white-space:nowrap}
+#wt td{padding:3px 4px;border-bottom:.5px solid #F0EFEB;color:#333;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wt tr.hl td{background:#FFF5E0;color:#7A4800}
 #wt tr:hover td{background:#F8F7F4;cursor:pointer}
-#wt .wlabel{font-weight:700;color:#185FA5}
-/* info bar */
+.wlabel{font-weight:700;color:#185FA5}
+/* Info */
 #info{font-size:10px;color:#AAA8A4;padding:4px 10px;background:#fff;border-radius:7px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
 </style>
 </head>
@@ -58,11 +57,10 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
 <div id="app">
 <div class="hdr">
   <h1>CAO Armoire Électrique — Spacial S3D</h1>
-  <div style="display:flex;gap:8px;font-size:10px;color:#888">
-    <span>● <span style="color:#FAECE7;background:#D85A30;border-radius:2px;padding:0 3px">Goulotte</span></span>
-    <span>● <span style="background:#E8E8E8;border-radius:2px;padding:0 3px;color:#555">Rail DIN</span></span>
-    <span>● <span style="background:#EBF3FF;border-radius:2px;padding:0 3px;color:#185FA5">Appareillage</span></span>
-    <span>● <span style="background:#FFF3DC;border-radius:2px;padding:0 3px;color:#A06000">Borniers</span></span>
+  <div style="display:flex;gap:6px;font-size:9.5px;color:#888;align-items:center">
+    <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FAECE7;border:1px solid #D85A30"></span>Goulotte</span>
+    <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E8E8E8;border:1px solid #909090"></span>Rail DIN</span>
+    <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#606060;border:1px solid #404040"></span>Presse-étoupe</span>
   </div>
 </div>
 <div id="tb">
@@ -73,9 +71,9 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
     <option value="800x800">800×800</option>
     <option value="600x600">600×600</option>
   </select></label>
-  <label>Rails app <input type="number" id="nb-app" value="4" min="1" max="10" class="n48" title="Nombre de rails appareillage (haut)"></label>
-  <label>Rails born <input type="number" id="nb-born" value="2" min="0" max="6" class="n48" title="Nombre de rails borniers (bas)"></label>
-  <label>Goul.H <input type="number" id="gh-h" value="40" min="20" max="80" class="n48"></label>
+  <label>Rails app <input type="number" id="nb-app" value="4" min="1" max="10" class="n48" title="Rails appareillage (haut)"></label>
+  <label>Rails born <input type="number" id="nb-born" value="2" min="0" max="6" class="n48" title="Rails borniers (bas)"></label>
+  <label>GH mm <input type="number" id="gh-h" value="40" min="20" max="80" class="n48" title="Hauteur goulottes horizontales"></label>
   <label>Esp.rails <input type="number" id="esp-r" value="20" min="0" max="50" class="n48"></label>
   <label>Ép.fond <input type="number" id="thickness" value="90" min="60" max="150" class="n48"></label>
   <div class="sep"></div>
@@ -91,32 +89,37 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
   </select></label>
   <button class="tbtn" id="btn-fil" onclick="togWire()">⚡ Tracer fil</button>
   <div class="sep"></div>
+  <button class="tbtn" id="btn-door" onclick="togDoor()">🚪 Porte</button>
+  <div class="sep"></div>
   <button class="tbtn red" onclick="clearAll()">Vider</button>
-  <button class="tbtn" onclick="exportHTML()">Exporter HTML</button>
+  <button class="tbtn" onclick="exportHTML()">HTML</button>
 </div>
 <div id="main">
   <div id="lib"></div>
   <div id="views-area">
     <canvas id="cv-face"></canvas>
-    <canvas id="cv-plan"></canvas>
+    <canvas id="cv-plan" style="cursor:default"></canvas>
+    <canvas id="cv-top" style="display:none"></canvas>
+    <canvas id="cv-bot" style="display:none"></canvas>
+    <canvas id="cv-door" style="display:none"></canvas>
   </div>
   <div id="wp">
     <div class="wp-hdr">
       <span class="wp-title">Filerie</span>
-      <button class="wp-csv" onclick="exportCSV()">⬇ CSV</button>
+      <button class="wp-btn" onclick="exportCSV()">⬇ CSV</button>
     </div>
     <div id="wt-wrap"><table id="wt">
-      <thead><tr><th>Rep.</th><th>mm²</th><th>De</th><th>Vers</th><th>L mm</th></tr></thead>
+      <thead><tr><th>Rep.</th><th>mm²</th><th>De</th><th>Vers</th><th>PE</th><th>L mm</th></tr></thead>
       <tbody id="wt-body"></tbody>
     </table></div>
   </div>
 </div>
-<div id="info">Glisser composants · Déplacer = cliquer-glisser · Étiqueter = double-clic · Supprimer = clic droit · Trait de coupe = glisser la ligne A–A · Fil = cliquer point de départ puis d'arrivée · Echap = annuler</div>
+<div id="info">Cliquer-glisser pour déplacer · Dbl-clic étiquette · Clic droit supprimer · Fil : cliquer point ⬤ départ puis arrivée · Échap annuler · Ctrl+C/V copier · Supr supprimer</div>
 </div>
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // CONSTANTES
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
   '600x800': {w:600,h:800, m:30},
@@ -124,147 +127,179 @@ const MODELS={
   '800x800': {w:800,h:800, m:30},
   '600x600': {w:600,h:600, m:25}
 };
-const VGOUL_W=60;   // largeur goulotte verticale mm
-const RAIL_H=35;    // hauteur rail DIN mm
-const RAIL_D_APP=50;  // profondeur rail appareillage mm
-const RAIL_D_BORN=30; // profondeur rail borniers mm
-const THICK_BOT=50;   // épaisseur fond en bas (fixe)
+const VGOUL_W=60,RAIL_H=35,RAIL_D_APP=50,RAIL_D_BORN=30,THICK_BOT=50;
 const BEND_R={1.5:15,2.5:20,6:35,10:50,16:70};
+const TOLE_EP=1.5; // épaisseur tôle S3D mm
+const CUT_EXT=120; // extension trait de coupe au-delà du fond mm
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BIBLIOTHÈQUE COMPOSANTS
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// BIBLIOTHÈQUE
+// ═══════════════════════════════════════════════════════════════════════
 const COMPS=[
   // Sectionneurs
-  {id:'s2p',name:'Sect. 2P',sub:'iSW-NA 63A',group:'Sectionneurs',poles:2,modW:36,modH:85,type:'sect',color:'#854F0B'},
-  {id:'s4p',name:'Sect. 4P',sub:'iSW-NA 100A',group:'Sectionneurs',poles:4,modW:72,modH:85,type:'sect',color:'#854F0B'},
-  // iC60N — 1P=18mm, 2P=36mm, 4P=72mm, H=85mm
-  {id:'d1p',name:'iC60N 1P',sub:'6–63A 6kA',group:'iC60N',poles:1,modW:18,modH:85,type:'disj',color:'#185FA5'},
-  {id:'d2p',name:'iC60N 2P',sub:'6–63A 6kA',group:'iC60N',poles:2,modW:36,modH:85,type:'disj',color:'#185FA5'},
-  {id:'d4p',name:'iC60N 4P',sub:'6–63A 6kA',group:'iC60N',poles:4,modW:72,modH:85,type:'disj',color:'#185FA5'},
+  {id:'s2p',name:'Sect. 2P',sub:'iSW-NA 63A',     group:'Sectionneurs',    poles:2, modW:36,  modH:85, type:'sect',    color:'#854F0B'},
+  {id:'s4p',name:'Sect. 4P',sub:'iSW-NA 100A',    group:'Sectionneurs',    poles:4, modW:72,  modH:85, type:'sect',    color:'#854F0B'},
+  // iC60N (1P=18mm, 2P=36mm, 4P=72mm, H=85mm)
+  {id:'d1p',name:'iC60N 1P',sub:'6–63A 6kA',      group:'iC60N',           poles:1, modW:18,  modH:85, type:'disj',   color:'#185FA5'},
+  {id:'d2p',name:'iC60N 2P',sub:'6–63A 6kA',      group:'iC60N',           poles:2, modW:36,  modH:85, type:'disj',   color:'#185FA5'},
+  {id:'d4p',name:'iC60N 4P',sub:'6–63A 6kA',      group:'iC60N',           poles:4, modW:72,  modH:85, type:'disj',   color:'#185FA5'},
   // Différentiels
-  {id:'df2',name:'iID 2P',sub:'40A 30mA',group:'Différentiels',poles:2,modW:36,modH:90,type:'diff',color:'#0F6E56'},
-  {id:'df4',name:'iID 4P',sub:'40A 30mA',group:'Différentiels',poles:4,modW:72,modH:90,type:'diff',color:'#0F6E56'},
+  {id:'df2',name:'iID 2P',  sub:'40A 30mA',        group:'Différentiels',   poles:2, modW:36,  modH:90, type:'diff',   color:'#0F6E56'},
+  {id:'df4',name:'iID 4P',  sub:'40A 30mA',        group:'Différentiels',   poles:4, modW:72,  modH:90, type:'diff',   color:'#0F6E56'},
   // Accessoires
-  {id:'pg12',name:'Peigne 12P',sub:'pas 9mm',group:'Accessoires',poles:12,modW:108,modH:10,type:'peigne',color:'#993C1D'},
-  {id:'pg24',name:'Peigne 24P',sub:'pas 9mm',group:'Accessoires',poles:24,modW:216,modH:10,type:'peigne',color:'#993C1D'},
-  {id:'rep4',name:'Répart. 4B',sub:'4 barreaux',group:'Accessoires',poles:4,modW:60,modH:40,type:'repartiteur',color:'#534AB7'},
+  {id:'pg12',name:'Peigne 12P',sub:'pas 9mm',      group:'Accessoires',     poles:12,modW:108, modH:10, type:'peigne', color:'#993C1D'},
+  {id:'pg24',name:'Peigne 24P',sub:'pas 9mm',      group:'Accessoires',     poles:24,modW:216, modH:10, type:'peigne', color:'#993C1D'},
+  {id:'rep4',name:'Répart. 4B',sub:'4 barreaux',   group:'Accessoires',     poles:4, modW:60,  modH:40, type:'repartiteur',color:'#534AB7'},
   // Phoenix Contact UTTB
-  {id:'ph15',name:'UTTB 1.5',sub:'5.2×51mm',group:'Phoenix Contact',poles:1,modW:5.2,modH:51,type:'bornier',color:'#E85C00'},
-  {id:'ph25',name:'UTTB 2.5',sub:'6.2×51mm',group:'Phoenix Contact',poles:1,modW:6.2,modH:51,type:'bornier',color:'#E85C00'},
-  {id:'ph6', name:'UTTB 6',  sub:'8.2×51mm',group:'Phoenix Contact',poles:1,modW:8.2,modH:51,type:'bornier',color:'#E85C00'},
+  {id:'ph15',name:'UTTB 1.5',sub:'5.2×51mm',       group:'Phoenix Contact', poles:1, modW:5.2, modH:51, type:'bornier',color:'#E85C00'},
+  {id:'ph25',name:'UTTB 2.5',sub:'6.2×51mm',       group:'Phoenix Contact', poles:1, modW:6.2, modH:51, type:'bornier',color:'#E85C00'},
+  {id:'ph6', name:'UTTB 6',  sub:'8.2×51mm',       group:'Phoenix Contact', poles:1, modW:8.2, modH:51, type:'bornier',color:'#E85C00'},
   // Schneider Linergy TR
-  {id:'sn15',name:'Linergy 1.5',sub:'5.2×55mm',group:'Schneider Linergy',poles:1,modW:5.2,modH:55,type:'bornier',color:'#3DBA4C'},
-  {id:'sn25',name:'Linergy 2.5',sub:'6.2×55mm',group:'Schneider Linergy',poles:1,modW:6.2,modH:55,type:'bornier',color:'#3DBA4C'},
-  {id:'sn6', name:'Linergy 6',  sub:'8.2×55mm',group:'Schneider Linergy',poles:1,modW:8.2,modH:55,type:'bornier',color:'#3DBA4C'},
+  {id:'sn15',name:'Linergy 1.5',sub:'5.2×55mm',    group:'Schneider Linergy',poles:1,modW:5.2, modH:55, type:'bornier',color:'#3DBA4C'},
+  {id:'sn25',name:'Linergy 2.5',sub:'6.2×55mm',    group:'Schneider Linergy',poles:1,modW:6.2, modH:55, type:'bornier',color:'#3DBA4C'},
+  {id:'sn6', name:'Linergy 6',  sub:'8.2×55mm',    group:'Schneider Linergy',poles:1,modW:8.2, modH:55, type:'bornier',color:'#3DBA4C'},
   // Wago 2002
-  {id:'wg15',name:'Wago 1.5',sub:'5×51mm',group:'Wago 2002',poles:1,modW:5,modH:51,type:'bornier',color:'#C89800'},
-  {id:'wg25',name:'Wago 2.5',sub:'6×51mm',group:'Wago 2002',poles:1,modW:6,modH:51,type:'bornier',color:'#C89800'},
-  {id:'wg6', name:'Wago 6',  sub:'8×51mm',group:'Wago 2002',poles:1,modW:8,modH:51,type:'bornier',color:'#C89800'},
-  // Entrelec / ERICO
-  {id:'en10',name:'Entrelec 10',sub:'10×61mm',group:'Entrelec',poles:1,modW:10,modH:61,type:'bornier',color:'#7A5E40'},
-  {id:'en16',name:'Entrelec 16',sub:'12×61mm',group:'Entrelec',poles:1,modW:12,modH:61,type:'bornier',color:'#7A5E40'},
-  {id:'en25',name:'Entrelec 25',sub:'16×65mm',group:'Entrelec',poles:1,modW:16,modH:65,type:'bornier',color:'#7A5E40'},
+  {id:'wg15',name:'Wago 1.5',sub:'5×51mm',         group:'Wago 2002',       poles:1, modW:5,   modH:51, type:'bornier',color:'#C89800'},
+  {id:'wg25',name:'Wago 2.5',sub:'6×51mm',         group:'Wago 2002',       poles:1, modW:6,   modH:51, type:'bornier',color:'#C89800'},
+  {id:'wg6', name:'Wago 6',  sub:'8×51mm',         group:'Wago 2002',       poles:1, modW:8,   modH:51, type:'bornier',color:'#C89800'},
+  // Entrelec/ERICO
+  {id:'en10',name:'Entrelec 10',sub:'10×61mm',     group:'Entrelec',        poles:1, modW:10,  modH:61, type:'bornier',color:'#7A5E40'},
+  {id:'en16',name:'Entrelec 16',sub:'12×61mm',     group:'Entrelec',        poles:1, modW:12,  modH:61, type:'bornier',color:'#7A5E40'},
+  {id:'en25',name:'Entrelec 25',sub:'16×65mm',     group:'Entrelec',        poles:1, modW:16,  modH:65, type:'bornier',color:'#7A5E40'},
+  // Presse-étoupes (PE) — pose en bande haute ou basse
+  {id:'pe16',name:'PE ISO 16',sub:'Ø16mm — M16',   group:'Presse-étoupes',  poles:1, modW:16,  modH:16, type:'petoupe',color:'#505050',isoD:16},
+  {id:'pe20',name:'PE ISO 20',sub:'Ø20mm — M20',   group:'Presse-étoupes',  poles:1, modW:20,  modH:20, type:'petoupe',color:'#505050',isoD:20},
+  {id:'pe26',name:'PE ISO 26',sub:'Ø26mm — M25',   group:'Presse-étoupes',  poles:1, modW:26,  modH:26, type:'petoupe',color:'#505050',isoD:26},
+  {id:'pe32',name:'PE ISO 32',sub:'Ø32mm — M32',   group:'Presse-étoupes',  poles:1, modW:32,  modH:32, type:'petoupe',color:'#505050',isoD:32},
+  // Voyants 22mm (pose sur porte uniquement)
+  {id:'vv',  name:'Voyant vert',  sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#00A830'},
+  {id:'vr',  name:'Voyant rouge', sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#CC1010'},
+  {id:'vo',  name:'Voyant orange',sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#E07000'},
+  {id:'vb',  name:'Voyant blanc', sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#E0E0E0'},
+  {id:'vbl', name:'Voyant bleu',  sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#0050CC'},
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // ÉTAT
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 const FLAGS={cotes:true,capots:true};
-const PLACED=[];    // composants posés
-const WIRES=[];     // fils tracés
-let wireCount=0;
-let cutLineY=null;  // Y monde du trait de coupe
+const PLACED=[];       // composants sur le fond
+const DOOR_PLACED=[];  // composants sur la porte
+const WIRES=[];
+let wireCount=0,peCount=0,voyantCount=0;
+let cutLineY=null,cutDir=1;  // cutDir +1=vers droite, -1=vers gauche
 let cutDragging=false;
-let hoveredComp=null;
-let selectedComp=null;
-let clipboard=null;
+let hoveredComp=null,selectedComp=null,clipboard=null;
 let dragging=null,dragOffX=0,dragOffY=0;
 let libGhost=null;
-// État fil
+let doorVisible=false;
 let wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};
+let doorDragging=null,doorDragOX=0,doorDragOY=0;
+let doorHovered=null,doorSelected=null;
+let faceCursorWX=null;
+const ZONE_DEPTHS={};   // zone.label → profondeur personnalisée (mm)
+const RAIL_OFFSETS={};  // rail.label → décalage Y (mm)
+let planViewMeta=null,planDepthDrag=null;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GETTERS TOOLBAR
-// ═══════════════════════════════════════════════════════════════════════════
-function GH()  {return Math.max(20,parseInt(document.getElementById('gh-h').value)||40)}
-function ESP() {return Math.max(0,parseInt(document.getElementById('esp-r').value)||20)}
-function NAP() {return Math.max(1,parseInt(document.getElementById('nb-app').value)||4)}
-function NBN() {return Math.max(0,parseInt(document.getElementById('nb-born').value)||2)}
-function THK() {return Math.max(60,parseInt(document.getElementById('thickness').value)||90)}
+// ═══════════════════════════════════════════════════════════════════════
+// GETTERS
+// ═══════════════════════════════════════════════════════════════════════
+function GH()  {return Math.max(20,+document.getElementById('gh-h').value||40)}
+function ESP() {return Math.max(0, +document.getElementById('esp-r').value||20)}
+function NAP() {return Math.max(1, +document.getElementById('nb-app').value||4)}
+function NBN() {return Math.max(0, +document.getElementById('nb-born').value||2)}
+function THK() {return Math.max(60,+document.getElementById('thickness').value||90)}
 function SEC() {return parseFloat(document.getElementById('sel-fil').value)||2.5}
 
 function tog(k){FLAGS[k]=!FLAGS[k];document.getElementById('btn-'+k).classList.toggle('on',FLAGS[k]);draw()}
+function updateInfo(){
+  const el=document.getElementById('info');
+  if(selectedComp){const c=selectedComp.comp,rl=selectedComp.railRef;el.innerHTML=`<b style="color:#185FA5">${selectedComp.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm${rl?` &middot; ${rl.label}`:''}  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Supr: supprimer &middot; Ctrl+C: copier</span>`;}
+  else if(doorSelected){const c=doorSelected.comp;el.innerHTML=`<b style="color:#6B3DA6">${doorSelected.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Clic droit: supprimer</span>`;}
+  else{el.textContent='Cliquer-glisser pour déplacer · Dbl-clic étiquette · Clic droit supprimer · Fil : cliquer point ⬤ départ puis arrivée · Échap annuler · Ctrl+C/V copier · Supr supprimer';}
+}
 function togWire(){
-  wm.active=!wm.active;wm.startP=null;wm.startPtId=null;
-  document.getElementById('btn-fil').classList.toggle('wire-on',wm.active);
-  draw();
+  wm={active:!wm.active,startP:null,startPtId:null,prevX:0,prevY:0};
+  document.getElementById('btn-fil').classList.toggle('wire-on',wm.active);draw();
+}
+function togDoor(){
+  doorVisible=!doorVisible;
+  document.getElementById('btn-door').classList.toggle('door-on',doorVisible);
+  document.getElementById('cv-door').style.display=doorVisible?'block':'none';
+  if(!doorVisible){doorSelected=null;doorHovered=null;}
+  draw();updateInfo();
 }
 function clearAll(){
   if(!confirm('Vider tout ?'))return;
-  PLACED.length=0;WIRES.length=0;wireCount=0;selectedComp=null;
-  draw();updateWT();
+  PLACED.length=0;DOOR_PLACED.length=0;WIRES.length=0;
+  wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;draw();updateWT();updateInfo();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // LAYOUT
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function getLayout(){
   const model=MODELS[document.getElementById('sel-model').value];
   const nbApp=NAP(),nbBorn=NBN(),ghH=GH(),espR=ESP();
   const{w,h,m}=model;
-  const intX=m+VGOUL_W;       // bord gauche de la zone interne
-  const intW=w-2*m-2*VGOUL_W; // largeur interne
-  const zones=[];
-  let cy=m;
+  const intX=m+VGOUL_W,intW=w-2*m-2*VGOUL_W;
+  const zones=[];let cy=m;
   // Rails appareillage (haut)
   for(let i=0;i<nbApp+1;i++){
-    zones.push({type:'goulH',y:cy,h:ghH,idx:i,sub:'app'});cy+=ghH;
-    if(i<nbApp){cy+=espR;zones.push({type:'rail',y:cy,h:RAIL_H,idx:i,sub:'app',depth:RAIL_D_APP});cy+=RAIL_H+espR;}
+    zones.push({type:'goulH',y:cy,h:ghH,idx:i,sub:'app',label:`GH${i+1}`});cy+=ghH;
+    if(i<nbApp){
+      cy+=espR;
+      const lbl=`R${i+1}`,off=RAIL_OFFSETS[lbl]||0;
+      zones.push({type:'rail',y:cy+off,h:RAIL_H,idx:i,sub:'app',depth:RAIL_D_APP,label:lbl,baseY:cy});
+      cy+=RAIL_H+espR;
+    }
   }
   // Rails borniers (bas)
   for(let i=0;i<nbBorn+1;i++){
-    const gi=nbApp+1+i;
-    zones.push({type:'goulH',y:cy,h:ghH,idx:gi,sub:'born'});cy+=ghH;
-    if(i<nbBorn){cy+=espR;zones.push({type:'rail',y:cy,h:RAIL_H,idx:nbApp+i,sub:'born',depth:RAIL_D_BORN});cy+=RAIL_H+espR;}
+    const gi=nbApp+1+i,ri=nbApp+i;
+    zones.push({type:'goulH',y:cy,h:ghH,idx:gi,sub:'born',label:`GH${gi+1}`});cy+=ghH;
+    if(i<nbBorn){
+      cy+=espR;
+      const lbl=`R${ri+1}`,off=RAIL_OFFSETS[lbl]||0;
+      zones.push({type:'rail',y:cy+off,h:RAIL_H,idx:ri,sub:'born',depth:RAIL_D_BORN,label:lbl,baseY:cy});
+      cy+=RAIL_H+espR;
+    }
   }
   if(cutLineY===null)cutLineY=h/2;
   return{model,nbApp,nbBorn,ghH,espR,intX,intW,zones,m,w,h};
 }
 
-function panelThick(y,h){
-  const t=THK();
-  return t-(t-THICK_BOT)*Math.max(0,Math.min(y/h,1));
-}
+function panelThick(y,h){const t=THK();return t-(t-THICK_BOT)*Math.max(0,Math.min(y/h,1))}
+function getZD(zone){return ZONE_DEPTHS[zone.label]!==undefined?ZONE_DEPTHS[zone.label]:zone.type==='goulH'?40:zone.depth||30;}
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TRANSFORMATIONS COORDONNÉES
-// ═══════════════════════════════════════════════════════════════════════════
-function getScaleF(){
-  const{w,h}=MODELS[document.getElementById('sel-model').value];
-  return Math.min(380/w,680/h,0.68);
-}
-function W2F(wx,wy){const sc=getScaleF();return[56+wx*sc,30+wy*sc]}
-function F2W(px,py){const sc=getScaleF();return[(px-56)/sc,(py-30)/sc]}
+// ═══════════════════════════════════════════════════════════════════════
+// COORDONNÉES
+// ═══════════════════════════════════════════════════════════════════════
+function getSc(){const{w,h}=MODELS[document.getElementById('sel-model').value];return Math.min(360/w,640/h,.66)}
+function W2F(wx,wy){const sc=getSc();return[58+wx*sc,34+wy*sc]}
+function F2W(px,py){const sc=getSc();return[(px-58)/sc,(py-34)/sc]}
 function wireR(sec){const m={1.5:1.4,2.5:1.8,6:2.8,10:3.6,16:4.5};return(m[String(sec)]||2)/2}
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // POINTS D'ACCROCHAGE
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function getConnPts(p){
-  if(!p||!p.comp)return[];
+  if(!p?.comp)return[];
   const c=p.comp,cw=c.modW,ch=c.modH;
   if(c.type==='disj'||c.type==='diff'||c.type==='sect')
     return[{id:'top',wx:p.wx+cw/2,wy:p.wy},{id:'bot',wx:p.wx+cw/2,wy:p.wy+ch}];
   if(c.type==='bornier')
     return[{id:'left',wx:p.wx,wy:p.wy+ch/2},{id:'right',wx:p.wx+cw,wy:p.wy+ch/2}];
+  if(c.type==='petoupe')
+    return[{id:'inner',wx:p.wx+cw/2,wy:p.wy+ch*(p.band==='top'?1:0)}];
+  if(c.type==='voyant')
+    return[{id:'bot',wx:p.wx+cw/2,wy:p.wy+ch}];
   return[];
 }
 
-function nearestConnPt(wx,wy,excludeP){
-  const th=12;
-  let best=null,bd=Infinity;
-  PLACED.forEach(p=>{
+function nearestConnPt(wx,wy,excludeP,collectionOverride){
+  const th=14;let best=null,bd=Infinity;
+  (collectionOverride||PLACED).forEach(p=>{
     if(p===excludeP)return;
     getConnPts(p).forEach(pt=>{
       const d=Math.hypot(wx-pt.wx,wy-pt.wy);
@@ -274,38 +309,39 @@ function nearestConnPt(wx,wy,excludeP){
   return best;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // SNAP & PLACEMENT
-// ═══════════════════════════════════════════════════════════════════════════
-function snapGrid(comp){
-  return(comp.type==='bornier')?1:18;
-}
-
+// ═══════════════════════════════════════════════════════════════════════
 function findFreeX(wx,comp,rail,layout){
-  const{intX,intW}=layout;
-  const grid=snapGrid(comp);
-  const onRail=PLACED.filter(p=>
-    p.type==='comp'&&p.railRef===rail&&
-    Math.abs(p.wy-(rail.y+(RAIL_H-p.comp.modH)/2))<3
-  );
-  const fits=x=>x>=intX&&x+comp.modW<=intX+intW&&!onRail.some(p=>x<p.wx+p.comp.modW&&x+comp.modW>p.wx);
-  let start=intX+Math.round((wx-intX)/grid)*grid;
-  start=Math.max(intX,Math.min(start,intX+intW-comp.modW));
-  for(let x=start;x<=intX+intW-comp.modW;x+=grid)if(fits(x))return x;
-  for(let x=start-grid;x>=intX;x-=grid)if(fits(x))return x;
+  const{intX,intW}=layout,grid=comp.type==='bornier'?1:18;
+  const peers=PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===rail.label);
+  const fits=x=>x>=intX&&x+comp.modW<=intX+intW&&!peers.some(p=>x<p.wx+p.comp.modW&&x+comp.modW>p.wx);
+  let s=intX+Math.round((wx-intX)/grid)*grid;
+  s=Math.max(intX,Math.min(s,intX+intW-comp.modW));
+  for(let x=s;x<=intX+intW-comp.modW;x+=grid)if(fits(x))return x;
+  for(let x=s-grid;x>=intX;x-=grid)if(fits(x))return x;
   return null;
 }
 
 function applySnap(wx,wy,comp,layout){
-  const{zones,intX,intW}=layout;
-  const isBorn=comp.type==='bornier';
-  const isApp=comp.type==='disj'||comp.type==='diff'||comp.type==='sect';
+  const{zones,intX,intW,m,h}=layout;
+  // Presse-étoupe : bandes haute/basse
+  if(comp.type==='petoupe'){
+    const grid=5,band=wy<h/2?'top':'bottom';
+    const peWy=band==='top'?m/2-comp.modH/2:h-m/2-comp.modH/2;
+    const peers=PLACED.filter(p=>p.type==='comp'&&p.comp?.type==='petoupe'&&p.band===band);
+    const fits=x=>!peers.some(p=>x<p.wx+p.comp.modW+2&&x+comp.modW+2>p.wx);
+    let fx=intX+Math.round((wx-intX)/grid)*grid;
+    fx=Math.max(intX,Math.min(fx,intX+intW-comp.modW));
+    if(!fits(fx)){for(let d=grid;d<intW;d+=grid){if(fits(fx+d)){fx+=d;break;}if(fits(fx-d)){fx-=d;break;}}}
+    return{wx:Math.max(intX,Math.min(fx,intX+intW-comp.modW)),wy:peWy,band,onRail:false};
+  }
+  // Composant standard
+  const isBorn=comp.type==='bornier',isApp=['disj','diff','sect'].includes(comp.type);
   const needSub=isBorn?'born':isApp?'app':null;
   const th=28;
   const rail=zones.find(z=>z.type==='rail'&&(needSub===null||z.sub===needSub)&&Math.abs(wy-(z.y+(RAIL_H-comp.modH)/2))<th);
-  if(!rail){
-    return{wx:Math.max(intX,Math.min(wx,intX+intW-comp.modW)),wy,onRail:false};
-  }
+  if(!rail)return{wx:Math.max(intX,Math.min(wx,intX+intW-comp.modW)),wy,onRail:false};
   const fx=findFreeX(wx,comp,rail,layout);
   const fy=rail.y+(RAIL_H-comp.modH)/2;
   if(fx===null)return{wx:Math.max(intX,wx),wy:fy,onRail:true,noSpace:true,rail};
@@ -313,42 +349,56 @@ function applySnap(wx,wy,comp,layout){
 }
 
 function autoLabel(comp){
-  if(comp.type==='bornier'){const n=PLACED.filter(p=>p.comp&&p.comp.type==='bornier').length+1;return`B${n}`;}
+  if(comp.type==='bornier'){return`B${PLACED.filter(p=>p.comp?.type==='bornier').length+1}`;}
+  if(comp.type==='petoupe'){return`PE${PLACED.filter(p=>p.comp?.type==='petoupe').length+1}`;}
+  if(comp.type==='voyant'){return`V${DOOR_PLACED.filter(p=>p.comp?.type==='voyant').length+1}`;}
   return comp.name;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ROUTAGE FIL
-// ═══════════════════════════════════════════════════════════════════════════
-function routeWire(p1,p2,layout){
-  const gs=layout.zones.filter(z=>z.type==='goulH');
-  if(!gs.length)return[p1,p2];
-  const midY=(p1[1]+p2[1])/2;
-  const g=gs.reduce((a,b)=>Math.abs(a.y+a.h/2-midY)<Math.abs(b.y+b.h/2-midY)?a:b);
-  const gY=g.y+g.h/2;
-  return[[p1[0],p1[1]],[p1[0],gY],[p2[0],gY],[p2[0],p2[1]]];
+// ═══════════════════════════════════════════════════════════════════════
+// ROUTAGE FIL — 3 segments stricts à l'équerre
+// Départ → montée/descente vers goulotte GH → horizontal → descente/montée arrivée
+// Jamais de diagonale, jamais de traversée de composant
+// ═══════════════════════════════════════════════════════════════════════
+function routeWireStrict(startPt,endPt,startComp,endComp,layout){
+  const{zones}=layout;
+  const[x1,y1]=startPt,[x2,y2]=endPt;
+  const goulottes=zones.filter(z=>z.type==='goulH');
+  if(!goulottes.length)return[startPt,endPt];
+
+  // 1. Chercher la goulotte qui est ENTRE les deux composants (en Y)
+  const yMin=Math.min(y1,y2),yMax=Math.max(y1,y2);
+  const between=goulottes.filter(z=>{const gY=z.y+z.h/2;return gY>=yMin-5&&gY<=yMax+5;});
+  const pool=between.length?between:goulottes;
+
+  // 2. Préférer la goulotte la plus proche de chaque point
+  // Pour disj → born : goulotte AU-DESSUS du disj (la plus proche au-dessus du pt départ)
+  const midY=(y1+y2)/2;
+  const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-midY)<Math.abs(b.y+b.h/2-midY)?a:b);
+  const gY=goulotte.y+goulotte.h/2;
+
+  // 3. 4 points stricts : départ → entrée goulotte → sortie goulotte → arrivée
+  return[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
 }
 
 function wireLength(pts){
   if(!pts||pts.length<2)return 0;
-  let l=0;
-  for(let i=1;i<pts.length;i++)l+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+  let l=0;for(let i=1;i<pts.length;i++)l+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
   return Math.round(l);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // HELPERS DESSIN
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function rr(ctx,x,y,w,h,r){
-  r=Math.max(0,Math.min(r,w/2,h/2));
-  ctx.beginPath();
+  r=Math.max(0,Math.min(r,w/2,h/2));ctx.beginPath();
   ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
   ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
   ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
-  ctx.closePath();
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
 
+// Spline avec rayon de cintrage minimum
 function drawSpline(ctx,wpts,minR,sc){
   if(!wpts||wpts.length<2)return;
   const pts=wpts.map(p=>W2F(p[0],p[1]));
@@ -365,30 +415,44 @@ function drawSpline(ctx,wpts,minR,sc){
   ctx.lineTo(pts[pts.length-1][0],pts[pts.length-1][1]);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // DESSIN PRINCIPAL
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function draw(){
   const layout=getLayout();
   const{intX,intW,zones,m,w,h}=layout;
-  const sc=getScaleF(),thick=THK();
-  const FW=Math.round(w*sc)+120,FH=Math.round(h*sc)+90;
+  const sc=getSc();
+  const FW=Math.round(w*sc)+130,FH=Math.round(h*sc)+100;
   const cv=document.getElementById('cv-face');
   cv.width=FW;cv.height=FH;cv.style.width=FW+'px';cv.style.height=FH+'px';
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,FW,FH);
-  function sx(v){return 56+v*sc}function sy(v){return 30+v*sc}function sw(v){return v*sc}
+  function sx(v){return 58+v*sc}function sy(v){return 34+v*sc}function sw(v){return v*sc}
 
-  // ── Fond armoire
+  // ── Fond
   const fg=ctx.createLinearGradient(sx(0),sy(0),sx(w),sy(h));
-  fg.addColorStop(0,'#E8F2FC');fg.addColorStop(1,'#D4E5F8');
+  fg.addColorStop(0,'#E8F2FC');fg.addColorStop(1,'#D2E6F6');
   ctx.fillStyle=fg;ctx.strokeStyle='#5B9FD4';ctx.lineWidth=1.5;
   rr(ctx,sx(0),sy(0),sw(w),sw(h),6);ctx.fill();ctx.stroke();
 
-  // ── Goulotte verticale gauche
-  drawVertGoul(ctx,sx(m),sy(m),sw(VGOUL_W),sw(h-2*m));
-  // ── Goulotte verticale droite
-  drawVertGoul(ctx,sx(w-m-VGOUL_W),sy(m),sw(VGOUL_W),sw(h-2*m));
+  // ── Bandes tôle haut/bas (presse-étoupes)
+  [0,h-m].forEach((bandY,bi)=>{
+    const grad=ctx.createLinearGradient(sx(0),sy(bandY),sx(0),sy(bandY+m));
+    grad.addColorStop(0,bi===0?'#B8C8D8':'#A8BCC8');
+    grad.addColorStop(1,bi===0?'#A8BCC8':'#98ACBC');
+    ctx.fillStyle=grad;
+    ctx.fillRect(sx(0),sy(bandY),sw(w),sw(m));
+    ctx.strokeStyle='#889AAA';ctx.lineWidth=.5;
+    ctx.strokeRect(sx(0),sy(bandY),sw(w),sw(m));
+    // Label GV bande
+    const fs=Math.max(7,Math.round(sc*16));
+    ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#7090B0';ctx.textAlign='left';
+    ctx.fillText(bi===0?'GV1 — GV2 (haut)':'GV1 — GV2 (bas)',sx(m+VGOUL_W+5),sy(bandY+m/2)+fs*.35);
+  });
+
+  // ── Goulottes verticales GV1 (gauche) et GV2 (droite)
+  drawVertGoul(ctx,sx(m),sy(m),sw(VGOUL_W),sw(h-2*m),'GV1');
+  drawVertGoul(ctx,sx(w-m-VGOUL_W),sy(m),sw(VGOUL_W),sw(h-2*m),'GV2');
 
   // ── Zones horizontales
   zones.forEach(z=>{
@@ -396,68 +460,64 @@ function draw(){
       ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
       rr(ctx,sx(intX),sy(z.y),sw(intW),sw(z.h),2);ctx.fill();ctx.stroke();
       if(FLAGS.capots){
-        ctx.fillStyle='rgba(83,74,183,.07)';ctx.strokeStyle='#534AB7';ctx.lineWidth=.4;
+        ctx.fillStyle='rgba(83,74,183,.07)';ctx.strokeStyle='#534AB7';ctx.lineWidth=.35;
         rr(ctx,sx(intX+3),sy(z.y+3),sw(intW-6),sw(z.h-6),1);ctx.fill();ctx.stroke();
       }
-      if(sw(z.h)>8){
-        const fs=Math.max(7,Math.round(sw(z.h)*.48));
+      if(sw(z.h)>7){
+        const fs=Math.max(6,Math.round(sw(z.h)*.46));
         ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#A04010';ctx.textAlign='left';
-        ctx.fillText(`G${z.idx+1}`,sx(intX+5),sy(z.y+z.h/2)+fs*.35);
+        ctx.fillText(z.label,sx(intX+5),sy(z.y+z.h/2)+fs*.35);
       }
     } else if(z.type==='rail'){
       drawRailDIN(ctx,sx,sy,sw,z,intX,intW,sc);
     }
   });
 
-  // ── Composants
+  // ── Composants fond
   PLACED.forEach(p=>{if(p.type==='comp')drawComp(ctx,p,sc);});
 
   // ── Fils
-  WIRES.forEach(w2=>drawWire(ctx,w2,sc,layout));
+  WIRES.forEach(wire=>drawWire(ctx,wire,sc,layout));
 
-  // ── Fil en cours (preview)
+  // ── Preview fil en cours
   if(wm.active&&wm.startP){
-    const startPtObj=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
-    if(startPtObj){
+    const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
+    if(sp){
       const sec=SEC(),minR=BEND_R[sec]||20;
-      const preview=routeWire([startPtObj.wx,startPtObj.wy],[wm.prevX,wm.prevY],layout);
-      ctx.strokeStyle='rgba(200,120,10,.5)';
-      ctx.lineWidth=Math.max(1.5,wireR(sec)*sc*2);
-      ctx.lineCap='round';ctx.lineJoin='round';
-      drawSpline(ctx,preview,minR,sc);ctx.stroke();ctx.lineCap='butt';
+      const prev=routeWireStrict([sp.wx,sp.wy],[wm.prevX,wm.prevY],wm.startP,null,layout);
+      ctx.strokeStyle='rgba(192,112,0,.55)';
+      ctx.lineWidth=Math.max(1.5,wireR(sec)*sc*2);ctx.lineCap='round';ctx.lineJoin='round';
+      drawSpline(ctx,prev,minR,sc);ctx.stroke();ctx.lineCap='butt';
+      // Point de départ accentué
+      const[spx,spy]=W2F(sp.wx,sp.wy);
+      ctx.fillStyle='#D06000';ctx.beginPath();ctx.arc(spx,spy,5,0,Math.PI*2);ctx.fill();
     }
   }
 
-  // ── Points d'accrochage (hover)
-  if(hoveredComp||(wm.active&&!wm.startP)){
-    const targets=wm.active?PLACED:hoveredComp?[hoveredComp]:[];
-    targets.forEach(p=>{
-      if(p.type!=='comp')return;
-      getConnPts(p).forEach(pt=>{
-        const[px,py]=W2F(pt.wx,pt.wy);
-        ctx.fillStyle='rgba(255,140,0,.9)';
-        ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.stroke();
-      });
+  // ── Points d'accrochage (hover ou mode fil)
+  const connTargets=wm.active?PLACED:hoveredComp?[hoveredComp]:[];
+  connTargets.forEach(p=>{
+    if(p.type!=='comp')return;
+    getConnPts(p).forEach(pt=>{
+      const[px,py]=W2F(pt.wx,pt.wy);
+      ctx.fillStyle='rgba(255,140,0,.88)';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.stroke();
     });
-  }
+  });
 
-  // ── Composant sélectionné (contour bleu)
-  if(selectedComp&&selectedComp.type==='comp'){
-    const c=selectedComp.comp;
-    const[px,py]=W2F(selectedComp.wx,selectedComp.wy);
+  // ── Sélection
+  if(selectedComp?.type==='comp'){
+    const c=selectedComp.comp;const[px,py]=W2F(selectedComp.wx,selectedComp.wy);
     ctx.strokeStyle='#185FA5';ctx.lineWidth=2;ctx.setLineDash([3,2]);
     rr(ctx,px-3,py-3,c.modW*sc+6,c.modH*sc+6,4);ctx.stroke();ctx.setLineDash([]);
   }
 
   // ── Trait de coupe A-A
-  drawCutLine(ctx,sx,sy,sw,w,h,sc);
+  drawCutLine(ctx,sx,sy,sw,w,h,sc,layout);
 
-  // ── Cotations
   if(FLAGS.cotes)drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,layout.espR);
 
-  // ── Ghost library drag
+  // ── Ghost
   if(libGhost){
     const c=libGhost.comp;
     const[wx0,wy0]=F2W(libGhost.x,libGhost.y);
@@ -470,243 +530,459 @@ function draw(){
   }
 
   drawPlanView(layout);
+  drawPlateView('top',layout);
+  drawPlateView('bot',layout);
+  if(doorVisible)drawDoorView(layout);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GOULOTTE VERTICALE
-// ═══════════════════════════════════════════════════════════════════════════
-function drawVertGoul(ctx,x,y,w,h){
-  ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
-  rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
-  // Striures
-  ctx.strokeStyle='rgba(216,90,48,.3)';ctx.lineWidth=.4;
-  for(let iy=y+10;iy<y+h-5;iy+=12){
-    ctx.beginPath();ctx.moveTo(x+3,iy);ctx.lineTo(x+w-3,iy);ctx.stroke();
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// RAIL DIN (profil oméga métallique)
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// RAIL DIN — profil oméga métallique
+// ═══════════════════════════════════════════════════════════════════════
 function drawRailDIN(ctx,sx,sy,sw,z,intX,intW,sc){
   const rx=sx(intX),ry=sy(z.y),rw=sw(intW),rh=sw(z.h);
-  // Dégradé métallique
   const mg=ctx.createLinearGradient(rx,ry,rx,ry+rh);
-  mg.addColorStop(0,'#ABABAB');mg.addColorStop(.1,'#D5D5D5');
-  mg.addColorStop(.3,'#F0F0F0');mg.addColorStop(.5,'#FAFAFA');
-  mg.addColorStop(.7,'#E8E8E8');mg.addColorStop(.9,'#C8C8C8');mg.addColorStop(1,'#A8A8A8');
+  mg.addColorStop(0,'#AAAAAA');mg.addColorStop(.1,'#D2D2D2');mg.addColorStop(.3,'#EEEEEE');
+  mg.addColorStop(.5,'#FAFAFA');mg.addColorStop(.7,'#E5E5E5');mg.addColorStop(.9,'#C5C5C5');mg.addColorStop(1,'#A5A5A5');
   ctx.fillStyle=mg;rr(ctx,rx,ry,rw,rh,2);ctx.fill();
-  // Flasques oméga
   const fh=Math.max(2,rh*.16);
-  const tg=ctx.createLinearGradient(rx,ry,rx,ry+fh);
-  tg.addColorStop(0,'#888');tg.addColorStop(1,'#CCC');
+  const tg=ctx.createLinearGradient(rx,ry,rx,ry+fh);tg.addColorStop(0,'#888');tg.addColorStop(1,'#CCC');
   ctx.fillStyle=tg;ctx.fillRect(rx,ry,rw,fh);
-  const bg=ctx.createLinearGradient(rx,ry+rh-fh,rx,ry+rh);
-  bg.addColorStop(0,'#C0C0C0');bg.addColorStop(1,'#888');
+  const bg=ctx.createLinearGradient(rx,ry+rh-fh,rx,ry+rh);bg.addColorStop(0,'#C0C0C0');bg.addColorStop(1,'#888');
   ctx.fillStyle=bg;ctx.fillRect(rx,ry+rh-fh,rw,fh);
-  // Rainure centrale
-  ctx.fillStyle='rgba(0,0,0,.06)';ctx.fillRect(rx,ry+rh*.36,rw,rh*.28);
-  // Perforations ovales (pas 25mm)
+  ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(rx,ry+rh*.36,rw,rh*.28);
   const hW=Math.max(2.5,sw(7)),hH=Math.max(3.5,sw(11)),hCY=ry+rh*.5;
   for(let hx=sx(intX+12.5);hx<rx+rw-hW;hx+=sw(25)){
-    ctx.fillStyle='#787878';ctx.beginPath();ctx.ellipse(hx,hCY,hW/2,hH/2,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#555';ctx.beginPath();ctx.ellipse(hx,hCY,hW*.28,hH*.28,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.ellipse(hx,hCY-hH*.13,hW*.32,hH*.2,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#767676';ctx.beginPath();ctx.ellipse(hx,hCY,hW/2,hH/2,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#545454';ctx.beginPath();ctx.ellipse(hx,hCY,hW*.28,hH*.28,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.ellipse(hx,hCY-hH*.13,hW*.3,hH*.19,0,0,Math.PI*2);ctx.fill();
   }
   ctx.strokeStyle='#909090';ctx.lineWidth=.7;rr(ctx,rx,ry,rw,rh,2);ctx.stroke();
-  // Label Rn (sans tension)
-  if(rh>8){
-    const fs=Math.max(6,Math.round(rh*.34));
+  if(rh>7){
+    const fs=Math.max(6,Math.round(rh*.33));
     ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#686868';ctx.textAlign='left';
-    ctx.fillText(`R${z.idx+1}`,rx+5,ry+rh*.5+fs*.35);
-    if(rh>14){
-      ctx.textAlign='right';ctx.fillStyle='#A0A0A0';ctx.font=`${fs*.85}px system-ui`;
-      ctx.fillText(z.sub==='born'?'Born.':'App.',rx+rw-5,ry+rh*.5+fs*.35);
-    }
+    ctx.fillText(z.label,rx+5,ry+rh*.5+fs*.35);
+    ctx.textAlign='right';ctx.fillStyle='#A8A8A8';ctx.font=`${fs*.8}px system-ui`;
+    ctx.fillText(z.sub==='born'?'Born.':'App.',rx+rw-5,ry+rh*.5+fs*.35);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TRAIT DE COUPE A-A
-// ═══════════════════════════════════════════════════════════════════════════
-function drawCutLine(ctx,sx,sy,sw,w,h,sc){
-  const cy=sy(cutLineY||h/2);
-  const x0=sx(0)-10,x1=sx(w)+10;
-  // Ligne ISO pointillée
-  ctx.save();
-  ctx.strokeStyle='#D06000';ctx.lineWidth=1.2;
-  ctx.setLineDash([10,4,2,4]);ctx.beginPath();ctx.moveTo(x0,cy);ctx.lineTo(x1,cy);ctx.stroke();
-  ctx.setLineDash([]);
-  // Flèches et labels style ISO (A—)
-  function arrowLabel(ax,ay,dir,lbl){
-    // Triangle flèche
-    ctx.fillStyle='#D06000';
-    ctx.beginPath();
-    if(dir>0){ctx.moveTo(ax+7,ay);ctx.lineTo(ax,ay-4);ctx.lineTo(ax,ay+4);}
-    else{ctx.moveTo(ax-7,ay);ctx.lineTo(ax,ay-4);ctx.lineTo(ax,ay+4);}
-    ctx.closePath();ctx.fill();
-    // Label
-    ctx.font='bold 10px system-ui';ctx.fillStyle='#D06000';
-    ctx.textAlign=dir>0?'left':'right';
-    ctx.fillText(lbl,ax+(dir>0?10:-10),ay+4);
+// ═══════════════════════════════════════════════════════════════════════
+// GOULOTTE VERTICALE
+// ═══════════════════════════════════════════════════════════════════════
+function drawVertGoul(ctx,x,y,w,h,label){
+  ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
+  rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(216,90,48,.25)';ctx.lineWidth=.35;
+  for(let iy=y+12;iy<y+h-6;iy+=12){ctx.beginPath();ctx.moveTo(x+3,iy);ctx.lineTo(x+w-3,iy);ctx.stroke();}
+  if(h>40){
+    const fs=Math.max(7,Math.round(w*.22));
+    ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(-Math.PI/2);
+    ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#C05020';ctx.textAlign='center';
+    ctx.fillText(label,0,fs*.35);ctx.restore();
   }
-  arrowLabel(x0,cy,-1,'A');
-  arrowLabel(x1,cy,1,'A');
-  // Indicateur hauteur mm depuis bas
-  const yFromBot=Math.round(h-(cutLineY||h/2));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TRAIT DE COUPE A-A (étendu -CUT_EXT … h+CUT_EXT, avec œil)
+// ═══════════════════════════════════════════════════════════════════════
+function drawCutLine(ctx,sx,sy,sw,w,h,sc,layout){
+  const clamp=Math.max(-CUT_EXT,Math.min(cutLineY||h/2,h+CUT_EXT));
+  const cy=34+clamp*sc;
+  const x0=sx(0)-18,x1=sx(w)+18;
+  ctx.save();
+  // Ligne pointillée ISO
+  ctx.strokeStyle='#C85800';ctx.lineWidth=1.2;ctx.setLineDash([10,4,2,4]);
+  ctx.beginPath();ctx.moveTo(x0,cy);ctx.lineTo(x1,cy);ctx.stroke();ctx.setLineDash([]);
+  // Flèches A — A
+  function arrow(ax,ay,dir){
+    ctx.fillStyle='#C85800';
+    ctx.beginPath();
+    if(dir>0){ctx.moveTo(ax+8,ay);ctx.lineTo(ax,ay-4);ctx.lineTo(ax,ay+4);}
+    else{ctx.moveTo(ax-8,ay);ctx.lineTo(ax,ay-4);ctx.lineTo(ax,ay+4);}
+    ctx.closePath();ctx.fill();
+    ctx.font='bold 9px system-ui';ctx.fillStyle='#C85800';
+    ctx.textAlign=dir>0?'left':'right';
+    ctx.fillText('A',ax+(dir>0?11:-11),ay+3);
+  }
+  arrow(x0,cy,-1);arrow(x1,cy,1);
+  // Œil gauche (avec indicateur direction)
+  drawEye(ctx,x0-28,cy,cutDir<0);
+  // Œil droit
+  drawEye(ctx,x1+28,cy,cutDir>0);
+  // Label hauteur (+Xmm hors fond haut / Xmm intérieur / -Xmm hors fond bas)
+  const cY2=cutLineY||layout.h/2;
+  let lbl;
+  if(cY2<0)lbl=`+${Math.abs(Math.round(cY2))} mm`;
+  else if(cY2>layout.h)lbl=`-${Math.round(cY2-layout.h)} mm`;
+  else lbl=`${Math.round(layout.h-cY2)} mm`;
   const midX=(x0+x1)/2;
-  ctx.fillStyle='rgba(208,96,0,.85)';rr(ctx,midX-30,cy-9,60,14,5);ctx.fill();
-  ctx.font='bold 9px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
-  ctx.fillText(`${yFromBot} mm`,midX,cy+1);
+  ctx.fillStyle='rgba(200,88,0,.88)';rr(ctx,midX-28,cy-9,56,14,5);ctx.fill();
+  ctx.font='bold 8.5px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(lbl,midX,cy+1);
   ctx.restore();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// VUE PLAN (COUPE A-A)
-// ═══════════════════════════════════════════════════════════════════════════
+function drawEye(ctx,cx,cy,active){
+  ctx.save();
+  ctx.strokeStyle='#C85800';ctx.fillStyle=active?'#C85800':'rgba(200,88,0,.3)';ctx.lineWidth=1;
+  // Contour œil
+  ctx.beginPath();ctx.moveTo(cx-9,cy);
+  ctx.bezierCurveTo(cx-9,cy-5.5,cx+9,cy-5.5,cx+9,cy);
+  ctx.bezierCurveTo(cx+9,cy+5.5,cx-9,cy+5.5,cx-9,cy);
+  ctx.closePath();
+  ctx.fillStyle=active?'rgba(200,88,0,.2)':'rgba(200,88,0,.08)';ctx.fill();ctx.stroke();
+  // Pupille
+  ctx.fillStyle='#C85800';ctx.beginPath();ctx.arc(cx,cy,2.5,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VUE PLAN (COUPE A-A) — section horizontale
+// ═══════════════════════════════════════════════════════════════════════
 function drawPlanView(layout){
+  planViewMeta=null; // reset avant de recalculer
   const{m,w,h,intX,intW,zones}=layout;
-  const cutY=cutLineY||h/2;
-  const thick=panelThick(cutY,h);
-  const scX=getScaleF();
-  const scZ=Math.min(140/thick,2.2);
-  const PW=Math.round(w*scX)+90;
-  const PH=Math.round(thick*scZ)+64;
+  const cutY=Math.max(-CUT_EXT,Math.min(cutLineY||h/2,h+CUT_EXT));
+  const isAbove=cutY<0,isBelow=cutY>h;
+  const thick=isAbove||isBelow?TOLE_EP:panelThick(cutY,h);
+  const scX=getSc(),scZ=Math.min(130/Math.max(thick,.1),2.5);
+  const PW=Math.round(w*scX)+90,PH=Math.round(Math.max(thick,4)*scZ)+66;
   const cv=document.getElementById('cv-plan');
   cv.width=PW;cv.height=PH;cv.style.width=PW+'px';cv.style.height=PH+'px';
-  const ctx=cv.getContext('2d');
-  ctx.clearRect(0,0,PW,PH);
-  const OX=45,OZ=18;
-  function px(x){return OX+x*scX}function pz(z){return OZ+z*scZ}
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,PW,PH);
+  const OX=46,OZ=18;
+  const flip=cutDir<0;
+  function px(x){return OX+(flip?(w-x):x)*scX}
+  function pz(z){return OZ+(flip?(thick-z):z)*scZ}
   function pw(v){return v*scX}function pd(v){return v*scZ}
 
-  // ── ABS matière (fond panneau)
-  const mat=ctx.createLinearGradient(OX,OZ,OX,OZ+pd(thick));
-  mat.addColorStop(0,'#C4CDD8');mat.addColorStop(1,'#B0BAC6');
-  ctx.fillStyle=mat;ctx.fillRect(OX,OZ,pw(w),pd(thick));
-  ctx.strokeStyle='#506070';ctx.lineWidth=1;ctx.strokeRect(OX,OZ,pw(w),pd(thick));
+  // ── Matière
+  if(isAbove||isBelow){
+    // Tôle S3D 1.5mm — coupe hors fond
+    const tg=ctx.createLinearGradient(OX,OZ,OX,OZ+pd(TOLE_EP));
+    tg.addColorStop(0,'#9090A0');tg.addColorStop(1,'#707080');
+    ctx.fillStyle=tg;ctx.fillRect(OX,OZ,pw(w),pd(TOLE_EP));
+    ctx.strokeStyle='#505060';ctx.lineWidth=.7;ctx.strokeRect(OX,OZ,pw(w),pd(TOLE_EP));
+    // Perçages PE
+    const band=isAbove?'top':'bottom';
+    PLACED.filter(p=>p.comp?.type==='petoupe'&&p.band===band).forEach(p=>{
+      const cx=px(p.wx+p.comp.modW/2);
+      const pr=Math.max(1.5,pw(p.comp.modW/2));
+      ctx.fillStyle='#333';ctx.beginPath();ctx.arc(cx,pz(TOLE_EP/2),pr,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.beginPath();ctx.arc(cx,pz(TOLE_EP/2),pr,0,Math.PI*2);ctx.stroke();
+      const fs=Math.max(6,Math.round(pw(p.comp.modW)*.3));
+      ctx.font=`${fs}px system-ui`;ctx.fillStyle='#EEE';ctx.textAlign='center';
+      ctx.fillText(p.label||'PE?',cx,OZ+pd(TOLE_EP)+10);
+    });
+  } else {
+    // ABS matière fond
+    const mat=ctx.createLinearGradient(OX,OZ,OX,OZ+pd(thick));
+    mat.addColorStop(0,'#C0C8D5');mat.addColorStop(1,'#AEB8C5');
+    ctx.fillStyle=mat;ctx.fillRect(OX,OZ,pw(w),pd(thick));
+    ctx.strokeStyle='#4E6070';ctx.lineWidth=1;ctx.strokeRect(OX,OZ,pw(w),pd(thick));
 
-  // ── Golottes verticales (section)
-  function drawVGoulSection(x1,gw){
-    ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
-    ctx.fillRect(px(x1),OZ,pw(gw),pd(thick));ctx.strokeRect(px(x1),OZ,pw(gw),pd(thick));
-    ctx.fillStyle='#E07040';ctx.fillRect(px(x1),OZ,2,pd(thick));
-    ctx.fillRect(px(x1)+pw(gw)-2,OZ,2,pd(thick));
-  }
-  drawVGoulSection(m,VGOUL_W);
-  drawVGoulSection(w-m-VGOUL_W,VGOUL_W);
-
-  // ── Ce qui est à cutY
-  const zone=zones.find(z=>cutY>=z.y&&cutY<z.y+z.h);
-  if(zone){
-    if(zone.type==='goulH'){
-      // Goulotte horizontale : U-channel vu de dessus
-      const gX=px(intX),gW=pw(intW);
-      const gD=pd(thick-14);
+    // Goulottes verticales GV1, GV2
+    function gvSection(x1,gw){
       ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
-      ctx.fillRect(gX,OZ,gW,gD);ctx.strokeRect(gX,OZ,gW,gD);
-      // Parois de la goulotte
-      ctx.fillStyle='rgba(216,90,48,.5)';
-      ctx.fillRect(gX,OZ,3,gD);ctx.fillRect(gX+gW-3,OZ,3,gD);
-      ctx.fillRect(gX,OZ+gD-3,gW,3);
-      // Câbles simulés
-      for(let cx=gX+10;cx<gX+gW-10;cx+=20){
-        ctx.fillStyle='rgba(133,79,11,.25)';ctx.beginPath();ctx.ellipse(cx,OZ+gD/2,3,3,0,0,Math.PI*2);ctx.fill();
-      }
-    } else if(zone.type==='rail'){
-      // Rail DIN vu de dessus
-      const rX=px(intX),rW=pw(intW);
-      const railDepth=zone.depth;const railD=pd(railDepth);
-      const railY=OZ+pd(railDepth*.38);
-      const railH2=pd(railDepth*.26);
-      const rg=ctx.createLinearGradient(rX,railY,rX,railY+railH2);
-      rg.addColorStop(0,'#D0D0D0');rg.addColorStop(.5,'#F5F5F5');rg.addColorStop(1,'#B0B0B0');
-      ctx.fillStyle=rg;ctx.fillRect(rX,railY,rW,railH2);
-      ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.strokeRect(rX,railY,rW,railH2);
-      // Composants sur ce rail à cette hauteur
-      PLACED.filter(p=>p.type==='comp'&&p.railRef===zone&&cutY>=p.wy&&cutY<=p.wy+p.comp.modH).forEach(p=>{
-        const cx2=px(p.wx),cW=pw(p.comp.modW);
-        const cFront=OZ+pd(railDepth*.08),cD=pd(railDepth*.78);
-        ctx.fillStyle=p.comp.color+'99';ctx.strokeStyle=p.comp.color;ctx.lineWidth=.6;
-        ctx.fillRect(cx2,cFront,cW,cD);ctx.strokeRect(cx2,cFront,cW,cD);
-        // Label composant dans la coupe
-        if(pw(p.comp.modW)>12){
-          const fs=Math.max(6,Math.round(pw(p.comp.modW)*.13));
+      ctx.fillRect(px(x1),OZ,pw(gw)*(flip?-1:1),pd(thick));
+      ctx.strokeRect(Math.min(px(x1),px(x1)+pw(gw)*(flip?-1:1)),OZ,pw(gw),pd(thick));
+    }
+    gvSection(m,VGOUL_W);gvSection(w-m-VGOUL_W,VGOUL_W);
+
+    // Zone à cutY — gorges variables et épaulement rail
+    const planViewHandles=[];
+    const zone=zones.find(z=>cutY>=z.y&&cutY<z.y+z.h);
+    if(zone?.type==='goulH'){
+      const goulD=getZD(zone);
+      const gX=px(intX),gW=pw(intW)*(flip?-1:1),gD=pd(goulD);
+      ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.7;
+      ctx.fillRect(Math.min(gX,gX+gW),OZ,Math.abs(gW),gD);
+      ctx.strokeRect(Math.min(gX,gX+gW),OZ,Math.abs(gW),gD);
+      ctx.fillStyle='rgba(216,90,48,.45)';
+      ctx.fillRect(Math.min(gX,gX+gW),OZ,3,gD);
+      ctx.fillRect(Math.max(gX,gX+gW)-3,OZ,3,gD);
+      ctx.fillRect(Math.min(gX,gX+gW),OZ+gD-3,Math.abs(gW),3);
+      // Drag handle gorge
+      const hY=OZ+gD,midX=(Math.min(gX,gX+gW)+Math.max(gX,gX+gW))/2;
+      const isDrg=planDepthDrag?.zoneLabel===zone.label;
+      ctx.strokeStyle=isDrg?'#C85800':'rgba(200,88,0,.65)';ctx.lineWidth=isDrg?2:1.2;ctx.setLineDash([5,3]);
+      ctx.beginPath();ctx.moveTo(Math.min(gX,gX+gW),hY);ctx.lineTo(Math.max(gX,gX+gW),hY);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=isDrg?'#C85800':'rgba(200,88,0,.8)';ctx.beginPath();ctx.arc(midX,hY,4,0,Math.PI*2);ctx.fill();
+      // Cote gorge
+      const cX=Math.max(gX,gX+gW)+18;
+      ctx.strokeStyle='#1D9E75';ctx.fillStyle='#C85800';ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(cX,OZ);ctx.lineTo(cX,hY);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX-3,OZ);ctx.lineTo(cX+3,OZ);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX-3,hY);ctx.lineTo(cX+3,hY);ctx.stroke();
+      ctx.save();ctx.translate(cX+11,(OZ+hY)/2);ctx.rotate(Math.PI/2);
+      ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`gorge ${Math.round(goulD)}mm`,0,0);ctx.restore();
+      planViewHandles.push({zoneLabel:zone.label,canvasY:hY,minD:10,maxD:thick-5,scZ,OZ});
+    } else if(zone?.type==='rail'){
+      const railD=getZD(zone);
+      const rX=px(intX),rW=pw(intW)*(flip?-1:1);
+      // Épaulement saillant
+      const shouldH=pd(railD*.12);
+      ctx.fillStyle='#B8C4CF';ctx.strokeStyle='#707888';ctx.lineWidth=.5;
+      ctx.fillRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),shouldH);
+      ctx.strokeRect(Math.min(rX,rX+rW),OZ,Math.abs(rW),shouldH);
+      // Rail DIN profil
+      const rZ=OZ+pd(railD*.18),rH=pd(railD*.30);
+      const rg=ctx.createLinearGradient(Math.min(rX,rX+rW),rZ,Math.min(rX,rX+rW),rZ+rH);
+      rg.addColorStop(0,'#CCC');rg.addColorStop(.45,'#F5F5F5');rg.addColorStop(1,'#AAA');
+      ctx.fillStyle=rg;ctx.fillRect(Math.min(rX,rX+rW),rZ,Math.abs(rW),rH);
+      ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.strokeRect(Math.min(rX,rX+rW),rZ,Math.abs(rW),rH);
+      // Drag handle profondeur rail
+      const hY2=rZ+rH,midX2=(Math.min(rX,rX+rW)+Math.max(rX,rX+rW))/2;
+      const isDrg2=planDepthDrag?.zoneLabel===zone.label;
+      ctx.strokeStyle=isDrg2?'#C85800':'rgba(200,88,0,.55)';ctx.lineWidth=isDrg2?2:1;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(Math.min(rX,rX+rW),hY2);ctx.lineTo(Math.max(rX,rX+rW),hY2);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=isDrg2?'#C85800':'rgba(200,88,0,.7)';ctx.beginPath();ctx.arc(midX2,hY2,3.5,0,Math.PI*2);ctx.fill();
+      // Cote profondeur rail
+      const cX2=Math.max(rX,rX+rW)+18;
+      ctx.strokeStyle='#1D9E75';ctx.fillStyle='#C85800';ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(cX2,OZ);ctx.lineTo(cX2,hY2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX2-3,OZ);ctx.lineTo(cX2+3,OZ);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cX2-3,hY2);ctx.lineTo(cX2+3,hY2);ctx.stroke();
+      ctx.save();ctx.translate(cX2+11,(OZ+hY2)/2);ctx.rotate(Math.PI/2);
+      ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`prof. ${Math.round(railD)}mm`,0,0);ctx.restore();
+      planViewHandles.push({zoneLabel:zone.label,canvasY:hY2,minD:8,maxD:thick-5,scZ,OZ});
+      // Composants à cette hauteur
+      PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===zone.label&&cutY>=p.wy&&cutY<=p.wy+p.comp.modH).forEach(p=>{
+        const cx=px(p.wx),cW=pw(p.comp.modW)*(flip?-1:1);
+        const cFr=OZ+pd(railD*.06),cD=pd(railD*.82);
+        ctx.fillStyle=p.comp.color+'90';ctx.strokeStyle=p.comp.color;ctx.lineWidth=.5;
+        ctx.fillRect(Math.min(cx,cx+cW),cFr,Math.abs(cW),cD);
+        ctx.strokeRect(Math.min(cx,cx+cW),cFr,Math.abs(cW),cD);
+        if(Math.abs(cW)>12){
+          const fs=Math.max(5,Math.round(Math.abs(cW)*.12));
           ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
-          ctx.fillText(p.label||'',cx2+cW/2,cFront+cD/2+fs*.35);
+          ctx.fillText(p.label||'',Math.min(cx,cx+cW)+Math.abs(cW)/2,cFr+cD/2+fs*.35);
         }
       });
     }
+    planViewMeta={OZ,scZ,thick,isAbove,isBelow,cutY,handles:planViewHandles,w,flip,OX};
   }
 
-  // ── Cotations de la coupe
+  // ── Cotation épaisseur
   if(FLAGS.cotes){
     ctx.strokeStyle='#1D9E75';ctx.lineWidth=.5;
-    // Largeur totale
     ctx.beginPath();ctx.moveTo(OX,OZ-10);ctx.lineTo(OX+pw(w),OZ-10);ctx.stroke();
     ctx.beginPath();ctx.moveTo(OX,OZ-14);ctx.lineTo(OX,OZ-6);ctx.stroke();
     ctx.beginPath();ctx.moveTo(OX+pw(w),OZ-14);ctx.lineTo(OX+pw(w),OZ-6);ctx.stroke();
     ctx.font='500 9px system-ui';ctx.fillStyle='#1D9E75';ctx.textAlign='center';
     ctx.fillText(`${layout.w} mm`,OX+pw(w)/2,OZ-13);
-    // Épaisseur à cette hauteur
-    ctx.beginPath();ctx.moveTo(OX+pw(w)+12,OZ);ctx.lineTo(OX+pw(w)+12,OZ+pd(thick));ctx.stroke();
-    ctx.beginPath();ctx.moveTo(OX+pw(w)+8,OZ);ctx.lineTo(OX+pw(w)+16,OZ);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(OX+pw(w)+8,OZ+pd(thick));ctx.lineTo(OX+pw(w)+16,OZ+pd(thick));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX+pw(w)+11,OZ);ctx.lineTo(OX+pw(w)+11,OZ+pd(thick));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX+pw(w)+7,OZ);ctx.lineTo(OX+pw(w)+15,OZ);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(OX+pw(w)+7,OZ+pd(thick));ctx.lineTo(OX+pw(w)+15,OZ+pd(thick));ctx.stroke();
     ctx.save();ctx.translate(OX+pw(w)+22,OZ+pd(thick)/2);ctx.rotate(Math.PI/2);
-    ctx.textAlign='center';ctx.fillText(`ép. ${Math.round(thick)}mm`,0,0);ctx.restore();
+    ctx.textAlign='center';ctx.fillText(`ép.${Math.round(thick)}mm`,0,0);ctx.restore();
   }
 
   // ── Labels
-  const yFromBot=Math.round(h-cutY);
-  ctx.font='bold 9px system-ui';ctx.fillStyle='#D06000';ctx.textAlign='left';
-  ctx.fillText(`Coupe A-A — à ${yFromBot} mm du bas`,OX,OZ+pd(thick)+16);
-  if(zone){
-    ctx.font='9px system-ui';ctx.fillStyle='#777';
-    const lbl=zone.type==='rail'?`Rail R${zone.idx+1} (prof. ${zone.depth}mm)`:
-              zone.type==='goulH'?`Goulotte G${zone.idx+1}`:'Zone vide';
-    ctx.fillText(lbl,OX,OZ+pd(thick)+28);
+  const cy3=cutLineY||layout.h/2;
+  let posLbl;
+  if(cy3<0)posLbl=`+${Math.abs(Math.round(cy3))}mm (hors fond, haut)`;
+  else if(cy3>layout.h)posLbl=`-${Math.round(cy3-layout.h)}mm (hors fond, bas)`;
+  else posLbl=`${Math.round(layout.h-cy3)}mm du bas`;
+  const dirLabel=cutDir>0?'→':'←';
+  ctx.font='bold 8.5px system-ui';ctx.fillStyle='#C85800';ctx.textAlign='left';
+  ctx.fillText(`Coupe A-A ${dirLabel}  ${posLbl}`,OX,OZ+pd(thick)+15);
+  if(isAbove||isBelow)ctx.fillText('(zone hors fond — tôle S3D 1.5mm)',OX,OZ+pd(thick)+26);
+  ctx.font='9px system-ui';ctx.fillStyle='#888';ctx.textAlign='right';
+  ctx.fillText(`Coupe A-A`,OX+pw(w),OZ+pd(thick)+15);
+  // Curseur X synchronisé avec la vue face
+  if(faceCursorWX!==null){
+    const cxc=px(faceCursorWX);
+    ctx.save();ctx.strokeStyle='rgba(200,88,0,.55)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(cxc,OZ-6);ctx.lineTo(cxc,OZ+pd(thick)+6);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
   }
-  // Titre
-  ctx.font='500 9px system-ui';ctx.fillStyle='#888';ctx.textAlign='right';
-  ctx.fillText('Coupe A-A',OX+pw(w),OZ+pd(thick)+16);
+  // Surlignage sélection / survol dans la coupe
+  if(!isAbove&&!isBelow){
+    [selectedComp,hoveredComp].forEach((p,pi)=>{
+      if(!p||p.type!=='comp')return;
+      if(cutY<p.wy||cutY>p.wy+p.comp.modH)return;
+      const cxL=px(p.wx),cW=pw(p.comp.modW)*(flip?-1:1);
+      ctx.save();ctx.strokeStyle=pi===0?'#185FA5':'rgba(24,95,165,.45)';ctx.lineWidth=pi===0?1.8:1;ctx.setLineDash([3,2]);
+      ctx.strokeRect(Math.min(cxL,cxL+cW)-2,OZ-2,Math.abs(cW)+4,pd(thick)+4);
+      ctx.setLineDash([]);
+      if(pi===0){ctx.font='bold 8px system-ui';ctx.fillStyle='#185FA5';ctx.textAlign='center';ctx.fillText(p.label||p.comp.name,Math.min(cxL,cxL+cW)+Math.abs(cW)/2,OZ-5);}
+      ctx.restore();
+    });
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// VUES PLAQUE HAUTE / BASSE (presse-étoupes)
+// ═══════════════════════════════════════════════════════════════════════
+function drawPlateView(which,layout){
+  const{m,w,h,intX,intW}=layout;
+  const cvId=which==='top'?'cv-top':'cv-bot';
+  const band=which==='top'?'top':'bottom';
+  const sc=getSc(),scZ=3; // profondeur plate = m, affiché 3× agrandi
+  const PW=Math.round(w*sc)+90,PH=Math.round(m*scZ)+55;
+  const cv=document.getElementById(cvId);
+  cv.width=PW;cv.height=PH;cv.style.width=PW+'px';cv.style.height=PH+'px';
+  cv.style.display='block';
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,PW,PH);
+  const OX=46,OZ=14;
+  function px(x){return OX+x*sc}function pw(v){return v*sc}function pd(v){return v*scZ}
+
+  // Tôle
+  const tg=ctx.createLinearGradient(OX,OZ,OX,OZ+pd(m));
+  tg.addColorStop(0,'#9598A8');tg.addColorStop(1,'#7A7D8C');
+  ctx.fillStyle=tg;ctx.fillRect(OX,OZ,pw(w),pd(m));
+  ctx.strokeStyle='#565868';ctx.lineWidth=1;ctx.strokeRect(OX,OZ,pw(w),pd(m));
+
+  // Bande intérieure
+  ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(px(intX),OZ,pw(intW),pd(m));
+
+  // PE
+  PLACED.filter(p=>p.comp?.type==='petoupe'&&p.band===band).forEach(p=>{
+    const cx=px(p.wx+p.comp.modW/2),cz=OZ+pd(m/2);
+    const r=Math.max(2,pw(p.comp.modW/2));
+    // Trou
+    ctx.fillStyle='#222';ctx.beginPath();ctx.arc(cx,cz,r,0,Math.PI*2);ctx.fill();
+    // Corps presse-étoupe
+    const rg=ctx.createRadialGradient(cx-r*.2,cz-r*.2,r*.1,cx,cz,r);
+    rg.addColorStop(0,'rgba(220,220,220,.8)');rg.addColorStop(.6,'rgba(140,140,140,.8)');
+    rg.addColorStop(1,'rgba(80,80,80,.8)');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(cx,cz,r*.85,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#505050';ctx.lineWidth=.7;ctx.beginPath();ctx.arc(cx,cz,r*.85,0,Math.PI*2);ctx.stroke();
+    // Label
+    const fs=Math.max(5,Math.round(r*.55));
+    ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#FFF';ctx.textAlign='center';
+    ctx.fillText(p.label||'PE?',cx,OZ-4);
+    ctx.font=`${fs*.85}px system-ui`;ctx.fillStyle='#CCC';
+    ctx.fillText(`ISO${p.comp.isoD}`,cx,OZ+pd(m)+12);
+  });
+  // Label vue
+  ctx.font='bold 8.5px system-ui';ctx.fillStyle='#7A7D8C';ctx.textAlign='left';
+  ctx.fillText(`Vue plaque ${which==='top'?'haute (GV haut)':'basse (GV bas)'} — Ø perçages PE`,OX,OZ+pd(m)+24);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VUE PORTE
+// ═══════════════════════════════════════════════════════════════════════
+function drawDoorView(layout){
+  const{m,w,h}=layout;
+  const sc=getSc();
+  const DW=Math.round(w*sc)+80,DH=Math.round(h*sc)+60;
+  const cv=document.getElementById('cv-door');
+  cv.width=DW;cv.height=DH;cv.style.width=DW+'px';cv.style.height=DH+'px';
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,DW,DH);
+  function sx(v){return 40+v*sc}function sy(v){return 20+v*sc}function sw(v){return v*sc}
+
+  // Porte
+  const pg=ctx.createLinearGradient(sx(0),sy(0),sx(w),sy(h));
+  pg.addColorStop(0,'#C8D8E8');pg.addColorStop(1,'#A8BCCC');
+  ctx.fillStyle=pg;ctx.strokeStyle='#6080A0';ctx.lineWidth=1.5;
+  rr(ctx,sx(0),sy(0),sw(w),sw(h),8);ctx.fill();ctx.stroke();
+
+  // Zone signalisation (en haut de la porte, 120mm de haut)
+  const zoneH=120;
+  ctx.fillStyle='rgba(255,255,255,.12)';ctx.strokeStyle='#8090A0';ctx.lineWidth=.7;
+  ctx.setLineDash([4,3]);rr(ctx,sx(m),sy(m),sw(w-2*m),sw(zoneH),4);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+  ctx.font='500 9px system-ui';ctx.fillStyle='rgba(80,100,120,.8)';ctx.textAlign='center';
+  ctx.fillText('Zone signalisation (voyants)',sx(w/2),sy(m+10));
+
+  // Poignée
+  ctx.fillStyle='rgba(200,210,220,.8)';ctx.strokeStyle='#5070900';ctx.lineWidth=.7;
+  rr(ctx,sx(w-m-14),sy(h/2-40),sw(10),sw(80),3);ctx.fill();ctx.stroke();
+
+  // Voyants posés
+  DOOR_PLACED.forEach(p=>{
+    if(p.type!=='comp')return;
+    drawVoyant(ctx,p,sc,sx,sy);
+    if(p===doorHovered||p===doorSelected){
+      const cvx=sx(p.wx+p.comp.modW/2),cvy=sy(p.wy+p.comp.modH/2),rv=p.comp.modW*sc/2;
+      ctx.strokeStyle=p===doorSelected?'#185FA5':'rgba(24,95,165,.55)';ctx.lineWidth=1.8;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.arc(cvx,cvy,rv+4,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    }
+  });
+
+  // Points d'accrochage (hover porte)
+  if(doorHovered){
+    getConnPts(doorHovered).forEach(pt=>{
+      const[px2,py2]=[sx(0)+pt.wx*sc,sy(0)+pt.wy*sc];
+      ctx.fillStyle='rgba(255,140,0,.88)';ctx.beginPath();ctx.arc(px2,py2,5,0,Math.PI*2);ctx.fill();
+    });
+  }
+
+  // Label
+  ctx.font='bold 10px system-ui';ctx.fillStyle='#6B3DA6';ctx.textAlign='center';
+  ctx.fillText('VUE PORTE — Glisser voyants depuis bibliothèque',sx(w/2),DH-10);
+}
+
+function drawVoyant(ctx,p,sc,sx,sy){
+  const c=p.comp;
+  const cx=sx(p.wx+c.modW/2),cy=sy(p.wy+c.modH/2);
+  const r=c.modW*sc/2;
+  // Corps
+  const rg=ctx.createRadialGradient(cx-r*.3,cy-r*.3,r*.05,cx,cy,r);
+  rg.addColorStop(0,c.color+'FF');rg.addColorStop(.6,c.color+'CC');
+  rg.addColorStop(1,c.color+'88');
+  ctx.fillStyle=rg;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+  // Anneau
+  ctx.strokeStyle='#333';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  // Brillance
+  ctx.fillStyle='rgba(255,255,255,.45)';ctx.beginPath();ctx.arc(cx-r*.28,cy-r*.28,r*.32,0,Math.PI*2);ctx.fill();
+  // Label
+  const fs=Math.max(6,Math.round(r*.5));
+  ctx.font=`bold ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=1.5;
+  ctx.strokeText(p.label||'V?',cx,cy+fs*.35);ctx.fillText(p.label||'V?',cx,cy+fs*.35);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // DESSIN FIL
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function drawWire(ctx,wire,sc,layout){
   if(!wire.pts||wire.pts.length<2)return;
-  const sec=wire.section;
-  const minR=BEND_R[sec]||20;
-  const lw=Math.max(1.2,wireR(sec)*sc*2);
-  const isHl=wire.highlighted;
-  // Ombre
-  ctx.strokeStyle=isHl?'rgba(220,120,0,.9)':'rgba(90,40,0,.5)';
+  const sec=wire.section,minR=BEND_R[sec]||20;
+  const lw=Math.max(1.2,wireR(sec)*sc*2),hl=wire.highlighted;
+  ctx.strokeStyle=hl?'rgba(220,120,0,.9)':'rgba(80,35,0,.45)';
   ctx.lineWidth=lw+2;ctx.lineCap='round';ctx.lineJoin='round';
   drawSpline(ctx,wire.pts,minR,sc);ctx.stroke();
-  // Fil principal
-  ctx.strokeStyle=isHl?'#FF9500':'#C47820';ctx.lineWidth=lw;
+  ctx.strokeStyle=hl?'#FF9500':'#C47820';ctx.lineWidth=lw;
   drawSpline(ctx,wire.pts,minR,sc);ctx.stroke();
   ctx.lineCap='butt';
-  // Étiquette Wn
-  const sc2=getScaleF();
-  const fs=Math.max(7,Math.round(8*Math.min(sc2*1.8,1)));
+  // Points départ/arrivée
+  [[wire.pts[0][0],wire.pts[0][1]],[wire.pts[wire.pts.length-1][0],wire.pts[wire.pts.length-1][1]]].forEach(([wx2,wy2])=>{
+    const[px,py]=W2F(wx2,wy2);
+    ctx.fillStyle=hl?'#FF9500':'#8B5C00';ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
+  });
+  // Label Wn
+  const fs=Math.max(7,Math.round(7*Math.min(getSc()*1.8,1)));
   const[lx,ly]=W2F(wire.pts[0][0],wire.pts[0][1]);
-  const lbl=`${wire.id} ${sec}mm²`;
   ctx.font=`bold ${fs}px system-ui`;
-  ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2.5;ctx.strokeText(lbl,lx+3,ly-4);
-  ctx.fillStyle=isHl?'#CC5500':'#5A2E00';ctx.fillText(lbl,lx+3,ly-4);
+  ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=2.5;ctx.strokeText(`${wire.id} ${sec}mm²`,lx+3,ly-4);
+  ctx.fillStyle=hl?'#CC5500':'#5A2E00';ctx.fillText(`${wire.id} ${sec}mm²`,lx+3,ly-4);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // DESSIN COMPOSANT
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function drawComp(ctx,p,sc){
-  const c=p.comp;
-  const[px2,py]=W2F(p.wx,p.wy);
-  const cw=c.modW*sc,ch=c.modH*sc;
-  if(p===dragging)ctx.globalAlpha=.62;
-  if(c.type==='bornier'){
+  const c=p.comp;const[px2,py]=W2F(p.wx,p.wy);const cw=c.modW*sc,ch=c.modH*sc;
+  if(p===dragging)ctx.globalAlpha=.6;
+  if(p===hoveredComp&&p!==selectedComp){ctx.save();ctx.strokeStyle='rgba(24,95,165,.4)';ctx.lineWidth=2;ctx.setLineDash([]);rr(ctx,px2-2,py-2,cw+4,ch+4,5);ctx.stroke();ctx.restore();}
+  if(c.type==='petoupe'){
+    // Presse-étoupe
+    const cx=px2+cw/2,cy=py+ch/2,r=Math.max(cw,ch)/2;
+    const rg=ctx.createRadialGradient(cx-r*.2,cy-r*.2,r*.05,cx,cy,r);
+    rg.addColorStop(0,'#D8D8D8');rg.addColorStop(.6,'#909090');rg.addColorStop(1,'#606060');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#404040';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#282828';ctx.beginPath();ctx.arc(cx,cy,r*.35,0,Math.PI*2);ctx.fill();
+    if(r>6){
+      const fs=Math.max(5,Math.round(r*.42));
+      ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
+      ctx.fillText(p.label||'PE',cx,py-2);
+      ctx.font=`${fs*.85}px system-ui`;ctx.fillStyle='#DDD';
+      ctx.fillText(`ISO${c.isoD}`,cx,cy+r+10);
+    }
+  } else if(c.type==='bornier'){
     ctx.fillStyle='#FEFAF0';ctx.strokeStyle=c.color;ctx.lineWidth=Math.max(.5,cw*.07);
     rr(ctx,px2,py,cw,ch,Math.max(1,cw*.14));ctx.fill();ctx.stroke();
     ctx.fillStyle=c.color;
@@ -760,14 +1036,14 @@ function drawComp(ctx,p,sc){
   ctx.globalAlpha=1;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // COTATIONS
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
-  ctx.strokeStyle='#1D9E75';ctx.fillStyle='#1D9E75';
+  const C='#1D9E75';ctx.strokeStyle=C;ctx.fillStyle=C;
   function dimH(x,y1,y2,lbl,big){
     if(Math.abs(y2-y1)<3)return;
-    const fs=big?Math.max(7,Math.round(sc*20)):Math.max(6,Math.round(sc*16));
+    const fs=big?Math.max(7,Math.round(sc*19)):Math.max(6,Math.round(sc*15));
     ctx.lineWidth=big?.8:.4;ctx.setLineDash(big?[]:[2,2]);
     ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke();ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(x-3,y1);ctx.lineTo(x+3,y1);ctx.stroke();
@@ -776,7 +1052,7 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
     ctx.textAlign='center';ctx.font=`${big?'600 ':''}${fs}px system-ui`;ctx.fillText(lbl,0,0);ctx.restore();
   }
   function dimW(y,x1,x2,lbl,big){
-    const fs=big?Math.max(7,Math.round(sc*20)):Math.max(6,Math.round(sc*16));
+    const fs=big?Math.max(7,Math.round(sc*19)):Math.max(6,Math.round(sc*15));
     ctx.lineWidth=big?.8:.4;ctx.setLineDash(big?[]:[2,2]);
     ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(x1,y-3);ctx.lineTo(x1,y+3);ctx.stroke();
@@ -787,62 +1063,58 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
   dimW(sy(0)-24,sx(0),sx(w),`${w} mm`,true);
   dimW(sy(0)-13,sx(intX),sx(intX+intW),`${intW} mm`,false);
   dimH(sx(0)-34,sy(0),sy(h),`${h} mm`,true);
-  // Zones droite
   const ex=sx(w)+22;
-  zones.forEach(z=>dimH(ex+(z.type==='rail'?14:0),sy(z.y),sy(z.y+z.h),`${z.h}`,false));
-  if(espR>0){
-    const fs=Math.max(5,Math.round(sc*14));
-    ctx.font=`${fs}px system-ui`;ctx.fillStyle='#AAAAAA';ctx.textAlign='left';
-    const firstRail=zones.find(z=>z.type==='rail');
-    if(firstRail)ctx.fillText(`±${espR}`,ex+14,sy(firstRail.y-espR/2)+fs*.35);
-  }
+  zones.forEach(z=>dimH(ex+(z.type==='rail'?13:0),sy(z.y),sy(z.y+z.h),`${z.h}`,false));
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // TABLEAU FILERIE
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function updateWT(){
-  const tbody=document.getElementById('wt-body');
-  tbody.innerHTML='';
+  const tbody=document.getElementById('wt-body');tbody.innerHTML='';
   WIRES.forEach(wire=>{
     const tr=document.createElement('tr');
     if(wire.highlighted)tr.classList.add('hl');
-    const de=wire.startP?wire.startP.label||'—':'—';
-    const vers=wire.endP?wire.endP.label||'—':'—';
-    tr.innerHTML=`<td class="wlabel">${wire.id}</td><td>${wire.section}</td><td title="${de}">${de}</td><td title="${vers}">${vers}</td><td>${wireLength(wire.pts)}</td>`;
-    tr.addEventListener('click',()=>{
-      WIRES.forEach(w=>w.highlighted=false);
-      wire.highlighted=true;draw();updateWT();
-    });
+    const de=wire.startP?.label||'—',vers=wire.endP?.label||'—';
+    const pe=wire.startP?.comp?.type==='petoupe'?wire.startP.label:
+             wire.endP?.comp?.type==='petoupe'?wire.endP.label:'';
+    tr.innerHTML=`<td class="wlabel">${wire.id}</td><td>${wire.section}</td><td title="${de}">${de}</td><td title="${vers}">${vers}</td><td>${pe}</td><td>${wireLength(wire.pts)}</td>`;
+    tr.addEventListener('click',()=>{WIRES.forEach(w2=>w2.highlighted=false);wire.highlighted=true;draw();updateWT();});
     tbody.appendChild(tr);
   });
 }
 
 function exportCSV(){
-  const rows=[['Repère','Section (mm²)','De','Vers','Longueur (mm)']];
-  WIRES.forEach(w=>rows.push([w.id,w.section,w.startP?w.startP.label||'':'',w.endP?w.endP.label||'':'',wireLength(w.pts)]));
-  const csv='﻿'+rows.map(r=>r.join(';')).join('\r\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const rows=[['Repère','Section (mm²)','De','Vers','Presse-étoupe','Longueur (mm)']];
+  WIRES.forEach(w=>{
+    const pe=w.startP?.comp?.type==='petoupe'?w.startP.label:w.endP?.comp?.type==='petoupe'?w.endP.label:'';
+    rows.push([w.id,w.section,w.startP?.label||'',w.endP?.label||'',pe,wireLength(w.pts)]);
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
   a.download='filerie.csv';a.click();
 }
 
 function exportHTML(){
-  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cao-armoire.html';a.click();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([document.documentElement.outerHTML],{type:'text/html'}));
+  a.download='cao-armoire.html';a.click();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // BIBLIOTHÈQUE
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function buildLib(){
   const panel=document.getElementById('lib');
-  panel.innerHTML='<div style="font-size:10px;font-weight:700;color:#BBBBBB;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;flex-shrink:0">Bibliothèque</div>';
+  panel.innerHTML='<div style="font-size:10px;font-weight:700;color:#BBBBB5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;flex-shrink:0">Bibliothèque</div>';
   const groups=[...new Set(COMPS.map(c=>c.group))];
   groups.forEach(g=>{
     const sec=document.createElement('div');sec.className='lib-sec';sec.textContent=g;panel.appendChild(sec);
     COMPS.filter(c=>c.group===g).forEach(c=>{
       const d=document.createElement('div');d.className='lib-item';
       d.innerHTML=`<div class="li-chip" style="background:${c.color}"></div><div class="li-info"><div class="li-name">${c.name}</div><div class="li-sub">${c.sub}</div></div>`;
+      d.title=c.type==='petoupe'?'Glisser sur vue plaque haute/basse OU sur la zone haute/basse du fond':
+              c.type==='voyant'?'Glisser sur la porte (bouton Porte requis)':'Glisser sur un rail DIN';
       d.addEventListener('mousedown',e=>{e.preventDefault();startLibDrag(e,c);});
       panel.appendChild(d);
     });
@@ -850,17 +1122,54 @@ function buildLib(){
 }
 
 function startLibDrag(e,comp){
-  const cv=document.getElementById('cv-face');
+  const isDoor=comp.type==='voyant';
+  const cvId=isDoor&&doorVisible?'cv-door':'cv-face';
+  const cv=document.getElementById(cvId);
   const rect=cv.getBoundingClientRect();
-  function onMove(ev){libGhost={comp,x:ev.clientX-rect.left,y:ev.clientY-rect.top};draw();}
+  function onMove(ev){
+    if(!isDoor){libGhost={comp,x:ev.clientX-rect.left,y:ev.clientY-rect.top};draw();}
+  }
   function onUp(ev){
-    const px=ev.clientX-rect.left,py=ev.clientY-rect.top;
-    if(px>0&&px<cv.width&&py>0&&py<cv.height){
-      const layout=getLayout();
-      const[wx0,wy0]=F2W(px,py);
-      const{wx,wy,onRail,noSpace,rail}=applySnap(wx0-comp.modW/2,wy0-comp.modH/2,comp,layout);
-      if(noSpace){alert('Plus de place sur ce rail.');}
-      else{PLACED.push({comp,wx,wy,type:'comp',label:autoLabel(comp),railRef:rail||null});}
+    // ── Drop PE direct sur vue plaque haute (cv-top) ou basse (cv-bot)
+    if(comp.type==='petoupe'){
+      for(const[cvId,band] of [['cv-top','top'],['cv-bot','bottom']]){
+        const cvEl=document.getElementById(cvId);
+        if(cvEl.style.display==='none')continue;
+        const rp=cvEl.getBoundingClientRect();
+        const ppx=ev.clientX-rp.left,ppy=ev.clientY-rp.top;
+        if(ppx>0&&ppx<cvEl.width&&ppy>0&&ppy<cvEl.height){
+          const layout=getLayout();
+          const{intX,intW,m,h}=layout;
+          const sc=getSc(),OX=46,grid=5;
+          const wx0=(ppx-OX)/sc;
+          const peWy=band==='top'?m/2-comp.modH/2:h-m/2-comp.modH/2;
+          const peers=PLACED.filter(p=>p.comp?.type==='petoupe'&&p.band===band);
+          const fits=x=>!peers.some(p=>x<p.wx+p.comp.modW+2&&x+comp.modW+2>p.wx);
+          let fx=intX+Math.round((wx0-intX)/grid)*grid;
+          fx=Math.max(intX,Math.min(fx,intX+intW-comp.modW));
+          if(!fits(fx)){for(let d=grid;d<intW;d+=grid){if(fits(fx+d)){fx+=d;break;}if(fits(fx-d)){fx-=d;break;}}}
+          PLACED.push({comp,wx:fx,wy:peWy,type:'comp',label:autoLabel(comp),railRef:null,band});
+          libGhost=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
+          draw();updateWT();return;
+        }
+      }
+    }
+    // ── Drop normal : porte ou fond
+    const target=isDoor&&doorVisible?document.getElementById('cv-door'):document.getElementById('cv-face');
+    const r=target.getBoundingClientRect();
+    const px=ev.clientX-r.left,py=ev.clientY-r.top;
+    if(px>0&&px<target.width&&py>0&&py<target.height){
+      if(isDoor&&doorVisible){
+        const sc=getSc();
+        const wx=(px-40)/sc-comp.modW/2,wy=(py-20)/sc-comp.modH/2;
+        DOOR_PLACED.push({comp,wx:Math.max(0,wx),wy:Math.max(0,wy),type:'comp',label:autoLabel(comp)});
+      } else {
+        const layout=getLayout();
+        const[wx0,wy0]=F2W(px,py);
+        const{wx,wy,onRail,noSpace,rail,band}=applySnap(wx0-comp.modW/2,wy0-comp.modH/2,comp,layout);
+        if(noSpace){alert('Plus de place.');}
+        else{PLACED.push({comp,wx,wy,type:'comp',label:autoLabel(comp),railRef:rail||null,band:band||null});}
+      }
     }
     libGhost=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
     draw();updateWT();
@@ -868,9 +1177,9 @@ function startLibDrag(e,comp){
   document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // INTERACTIONS CANVAS FACE
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function setupFaceCanvas(){
   const cv=document.getElementById('cv-face');
   cv.addEventListener('mousemove',e=>{
@@ -879,124 +1188,250 @@ function setupFaceCanvas(){
     const[,cutPY]=W2F(0,cutLineY||0);
     const my=e.clientY-r.top;
     if(cutDragging){
-      cutLineY=Math.max(0,Math.min(wy,getLayout().h));draw();return;
+      cutLineY=wy;draw();return;
     }
-    if(Math.abs(my-cutPY)<8&&!dragging&&!wm.active){cv.style.cursor='ns-resize';}
-    else if(wm.active){cv.style.cursor='crosshair';}
-    else{cv.style.cursor='default';}
+    const layout0=getLayout();
+    const onRail=!wm.active&&!dragging&&layout0.zones.some(z=>z.type==='rail'&&wx>=layout0.intX&&wx<=layout0.intX+layout0.intW&&wy>=z.y&&wy<z.y+z.h);
+    cv.style.cursor=Math.abs(my-cutPY)<8&&!wm.active?'ns-resize':onRail&&!hoveredComp?'ns-resize':wm.active?'crosshair':'default';
+    faceCursorWX=wx;
     const oldH=hoveredComp;
     hoveredComp=PLACED.find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH)||null;
     if(wm.active&&wm.startP){wm.prevX=wx;wm.prevY=wy;}
-    if(oldH!==hoveredComp||(wm.active&&wm.startP))draw();
+    if(oldH!==hoveredComp||(wm.active&&wm.startP))draw();else drawPlanView(getLayout());
   });
+  cv.addEventListener('mouseleave',()=>{faceCursorWX=null;hoveredComp=null;drawPlanView(getLayout());});
   cv.addEventListener('mousedown',e=>{
     if(e.button!==0)return;
     const r=cv.getBoundingClientRect();
     const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
     const[,cutPY]=W2F(0,cutLineY||0);
     const my=e.clientY-r.top;
-    // Drag trait de coupe
-    if(Math.abs(my-cutPY)<8&&!dragging&&!wm.active){cutDragging=true;return;}
+    // Clic sur œils → toggle direction
+    const sc=getSc(),cy=cutPY;
+    const x0=58-18,x1=58+getLayout().w*sc+18;
+    if(Math.abs(my-cy)<10&&(Math.abs(e.clientX-r.left-x0)<14||Math.abs(e.clientX-r.left-x1)<14)){
+      cutDir*=-1;draw();return;
+    }
+    // Trait de coupe
+    if(Math.abs(my-cutPY)<8&&!wm.active){cutDragging=true;return;}
     // Mode fil
     if(wm.active){
       const nearest=nearestConnPt(wx,wy,wm.startP);
       if(!nearest){if(wm.startP){wm.startP=null;wm.startPtId=null;draw();}return;}
       if(!wm.startP){wm.startP=nearest.placed;wm.startPtId=nearest.pt.id;wm.prevX=wx;wm.prevY=wy;draw();return;}
-      // Compléter le fil
-      const endPtObj=nearest.pt;
-      const startPtObj=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
-      if(startPtObj&&nearest.placed!==wm.startP){
+      const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
+      if(sp&&nearest.placed!==wm.startP){
         const sec=SEC(),layout=getLayout();
-        const pts=routeWire([startPtObj.wx,startPtObj.wy],[endPtObj.wx,endPtObj.wy],layout);
+        const pts=routeWireStrict([sp.wx,sp.wy],[nearest.pt.wx,nearest.pt.wy],wm.startP,nearest.placed,layout);
         wireCount++;
         WIRES.push({id:`W${wireCount}`,section:sec,startP:wm.startP,startPtId:wm.startPtId,endP:nearest.placed,endPtId:nearest.pt.id,pts,highlighted:false});
         wm.startP=null;wm.startPtId=null;draw();updateWT();
       }
       return;
     }
-    // Sélection / drag composant
-    const hit=PLACED.slice().reverse().find(p=>{
-      if(p.type!=='comp')return false;
-      const c=p.comp;return wx>=p.wx&&wx<=p.wx+c.modW&&wy>=p.wy&&wy<=p.wy+c.modH;
-    });
-    selectedComp=hit||null;
-    if(!hit){draw();return;}
+    // Sélection/drag
+    const hit=PLACED.slice().reverse().find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
+    selectedComp=hit||null;doorSelected=null;updateInfo();
+    if(!hit){
+      // Rail drag (décalage Y)
+      const layout2=getLayout();
+      const railHit=layout2.zones.find(z=>z.type==='rail'&&wx>=layout2.intX&&wx<=layout2.intX+layout2.intW&&wy>=z.y&&wy<z.y+z.h);
+      if(railHit&&!wm.active){
+        const startWY=wy,startOff=RAIL_OFFSETS[railHit.label]||0;
+        // Limites : ne pas sortir de l'espace entre les goulottes adjacentes
+        const above=layout2.zones.filter(z=>z.type==='goulH'&&z.y<railHit.y).pop();
+        const below=layout2.zones.find(z=>z.type==='goulH'&&z.y>railHit.y);
+        const minOff=above?above.y+above.h-(railHit.baseY||railHit.y)+2:-40;
+        const maxOff=below?below.y-(railHit.baseY||railHit.y)-RAIL_H-2:40;
+        function onRM(ev){
+          const[,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
+          const delta=wy2-startWY;
+          RAIL_OFFSETS[railHit.label]=Math.round(Math.max(minOff,Math.min(startOff+delta,maxOff)));
+          const nl=getLayout(),nr=nl.zones.find(z=>z.label===railHit.label);
+          if(nr){PLACED.filter(p=>p.railRef?.label===railHit.label).forEach(p=>{p.wy=nr.y+(RAIL_H-p.comp.modH)/2;p.railRef=nr;});}
+          draw();
+        }
+        function onRU(){document.removeEventListener('mousemove',onRM);document.removeEventListener('mouseup',onRU);}
+        document.addEventListener('mousemove',onRM);document.addEventListener('mouseup',onRU);
+        return;
+      }
+      draw();return;
+    }
     dragging=hit;dragOffX=wx-hit.wx;dragOffY=wy-hit.wy;
     const idx=PLACED.indexOf(hit);PLACED.splice(idx,1);
     function onMove(ev){
       const[wx2,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
       const layout=getLayout();
-      const{wx:nx,wy:ny,rail}=applySnap(wx2-dragOffX,wy2-dragOffY,hit.comp,layout);
-      hit.wx=nx;hit.wy=ny;if(rail)hit.railRef=rail;draw();
+      const{wx:nx,wy:ny,rail,band}=applySnap(wx2-dragOffX,wy2-dragOffY,hit.comp,layout);
+      hit.wx=nx;hit.wy=ny;if(rail)hit.railRef=rail;if(band)hit.band=band;
+      // Recalculer fils connectés
+      WIRES.filter(w=>w.startP===hit||w.endP===hit).forEach(w=>{
+        const sp=getConnPts(w.startP).find(pt=>pt.id===w.startPtId);
+        const ep=getConnPts(w.endP).find(pt=>pt.id===w.endPtId);
+        if(sp&&ep)w.pts=routeWireStrict([sp.wx,sp.wy],[ep.wx,ep.wy],w.startP,w.endP,layout);
+      });
+      draw();
     }
-    function onUp(){
-      PLACED.splice(idx,0,hit);dragging=null;
-      document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();
-    }
+    function onUp(){PLACED.splice(idx,0,hit);dragging=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();updateWT();}
     document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
   });
   document.addEventListener('mouseup',()=>{if(cutDragging){cutDragging=false;draw();}});
   cv.addEventListener('dblclick',e=>{
     if(wm.active)return;
-    const r=cv.getBoundingClientRect();
-    const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
+    const r=cv.getBoundingClientRect();const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
     const idx=PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
     if(idx>=0){const l=prompt('Étiquette :',PLACED[idx].label||'');if(l!==null){PLACED[idx].label=l;draw();updateWT();}}
   });
   cv.addEventListener('contextmenu',e=>{
     e.preventDefault();
-    const r=cv.getBoundingClientRect();
-    const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
+    const r=cv.getBoundingClientRect();const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
     const idx=PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
     if(idx>=0&&confirm('Supprimer ce composant ?')){
-      const removed=PLACED[idx];PLACED.splice(idx,1);
-      // Supprimer fils connectés
-      for(let i=WIRES.length-1;i>=0;i--){if(WIRES[i].startP===removed||WIRES[i].endP===removed)WIRES.splice(i,1);}
-      if(selectedComp===removed)selectedComp=null;
-      draw();updateWT();
+      const rm=PLACED[idx];PLACED.splice(idx,1);
+      for(let i=WIRES.length-1;i>=0;i--){if(WIRES[i].startP===rm||WIRES[i].endP===rm)WIRES.splice(i,1);}
+      if(selectedComp===rm)selectedComp=null;draw();updateWT();updateInfo();
     }
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CLAVIER — Copier/Coller, Supprimer, Echap
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// INTERACTIONS CANVAS PLAN
+// ═══════════════════════════════════════════════════════════════════════
+function setupPlanCanvas(){
+  const cv=document.getElementById('cv-plan');
+  cv.addEventListener('mousemove',e=>{
+    const r=cv.getBoundingClientRect();
+    const my=e.clientY-r.top;
+    // Hover poignées gorge
+    if(planViewMeta&&planViewMeta.handles&&planViewMeta.handles.length){
+      const near=planViewMeta.handles.find(h=>Math.abs(my-h.canvasY)<7);
+      if(near){cv.style.cursor='ns-resize';return;}
+    }
+    // Hover composants dans coupe
+    const layout=getLayout();const{w,h,zones}=layout;
+    const mx=e.clientX-r.left;
+    const cutY=Math.max(-CUT_EXT,Math.min(cutLineY||h/2,h+CUT_EXT));
+    const zone=zones.find(z=>z.type==='rail'&&cutY>=z.y&&cutY<z.y+z.h);
+    if(!zone){cv.style.cursor='default';return;}
+    const scX=getSc(),flip=cutDir<0,OX=46;
+    const worldX=flip?(w-(mx-OX)/scX):(mx-OX)/scX;
+    const hit=PLACED.find(p=>p.type==='comp'&&p.railRef?.label===zone.label&&cutY>=p.wy&&cutY<=p.wy+p.comp.modH&&worldX>=p.wx&&worldX<=p.wx+p.comp.modW);
+    cv.style.cursor=hit?'pointer':'default';
+  });
+  cv.addEventListener('mousedown',e=>{
+    const r=cv.getBoundingClientRect();
+    const mx=e.clientX-r.left,my=e.clientY-r.top;
+    // Drag poignée gorge / profondeur
+    if(planViewMeta&&planViewMeta.handles){
+      const near=planViewMeta.handles.find(h=>Math.abs(my-h.canvasY)<7);
+      if(near){
+        planDepthDrag={zoneLabel:near.zoneLabel};
+        const{scZ,OZ,minD,maxD}=near;
+        function onPD(ev){
+          const newY=ev.clientY-r.top-OZ;
+          const newD=Math.max(minD,Math.min(newY/scZ,maxD));
+          ZONE_DEPTHS[near.zoneLabel]=Math.round(newD);
+          draw();
+        }
+        function onPU(){planDepthDrag=null;document.removeEventListener('mousemove',onPD);document.removeEventListener('mouseup',onPU);draw();}
+        document.addEventListener('mousemove',onPD);document.addEventListener('mouseup',onPU);
+        return;
+      }
+    }
+    // Clic sur composant dans coupe → sélection
+    if(mx<30||mx>r.width-30){cutDir*=-1;draw();return;}
+    const layout=getLayout();const{w,h,zones}=layout;
+    const cutY=Math.max(-CUT_EXT,Math.min(cutLineY||h/2,h+CUT_EXT));
+    const zone=zones.find(z=>z.type==='rail'&&cutY>=z.y&&cutY<z.y+z.h);
+    if(!zone)return;
+    const scX=getSc(),flip=cutDir<0,OX=46;
+    const worldX=flip?(w-(mx-OX)/scX):(mx-OX)/scX;
+    const hit=PLACED.find(p=>p.type==='comp'&&p.railRef?.label===zone.label&&cutY>=p.wy&&cutY<=p.wy+p.comp.modH&&worldX>=p.wx&&worldX<=p.wx+p.comp.modW);
+    selectedComp=hit||null;doorSelected=null;draw();updateInfo();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INTERACTIONS CANVAS PORTE
+// ═══════════════════════════════════════════════════════════════════════
+function setupDoorCanvas(){
+  const cv=document.getElementById('cv-door');
+  function dCoords(e){const sc=getSc(),r=cv.getBoundingClientRect();return[(e.clientX-r.left-40)/sc,(e.clientY-r.top-20)/sc];}
+  function dHit(wx,wy){return DOOR_PLACED.slice().reverse().find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH)||null;}
+  cv.addEventListener('mousemove',e=>{
+    if(!doorVisible)return;
+    const[wx,wy]=dCoords(e);
+    if(doorDragging){
+      const{w,h}=getLayout();
+      doorDragging.wx=Math.max(0,Math.min(wx-doorDragOX,w-doorDragging.comp.modW));
+      doorDragging.wy=Math.max(0,Math.min(wy-doorDragOY,h-doorDragging.comp.modH));
+      draw();return;
+    }
+    const oldH=doorHovered;doorHovered=dHit(wx,wy);
+    cv.style.cursor=doorHovered?'grab':'default';
+    if(oldH!==doorHovered)draw();
+  });
+  cv.addEventListener('mousedown',e=>{
+    if(!doorVisible||e.button!==0)return;
+    const[wx,wy]=dCoords(e);const hit=dHit(wx,wy);if(!hit)return;
+    e.preventDefault();
+    doorSelected=hit;doorDragging=hit;doorDragOX=wx-hit.wx;doorDragOY=wy-hit.wy;
+    selectedComp=null;draw();updateInfo();
+    function onUp(){doorDragging=null;document.removeEventListener('mouseup',onUp);draw();}
+    document.addEventListener('mouseup',onUp);
+  });
+  cv.addEventListener('dblclick',e=>{
+    if(!doorVisible)return;
+    const[wx,wy]=dCoords(e);
+    const idx=DOOR_PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
+    if(idx>=0){const l=prompt('Étiquette :',DOOR_PLACED[idx].label||'');if(l!==null){DOOR_PLACED[idx].label=l;draw();updateInfo();}}
+  });
+  cv.addEventListener('contextmenu',e=>{
+    e.preventDefault();if(!doorVisible)return;
+    const[wx,wy]=dCoords(e);
+    const idx=DOOR_PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
+    if(idx>=0&&confirm('Supprimer ce voyant ?')){DOOR_PLACED.splice(idx,1);doorHovered=null;doorSelected=null;draw();updateInfo();}
+  });
+  cv.addEventListener('mouseleave',()=>{doorHovered=null;if(!doorDragging)draw();});
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLAVIER
+// ═══════════════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){
-    if(wm.active){wm.startP=null;wm.startPtId=null;}
-    selectedComp=null;draw();return;
-  }
-  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&selectedComp){clipboard={comp:selectedComp.comp,label:selectedComp.label};return;}
+  if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
+  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&selectedComp)clipboard={comp:selectedComp.comp,label:selectedComp.label};
   if(e.ctrlKey&&e.key.toLowerCase()==='v'&&clipboard){
     const layout=getLayout();
-    const refP=selectedComp||PLACED.filter(p=>p.comp===clipboard.comp).slice(-1)[0];
-    const baseWx=refP?refP.wx+refP.comp.modW+1:layout.intX;
-    const baseWy=refP?refP.wy:layout.zones.find(z=>z.type==='rail'&&z.sub==='app')?.y||100;
-    const{wx,wy,onRail,noSpace,rail}=applySnap(baseWx,baseWy,clipboard.comp,layout);
-    if(!noSpace){PLACED.push({comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null});draw();updateWT();}
-    return;
+    const ref=selectedComp||PLACED.filter(p=>p.comp===clipboard.comp).slice(-1)[0];
+    const bx=ref?ref.wx+ref.comp.modW+1:layout.intX;
+    const by=ref?ref.wy:layout.zones.find(z=>z.type==='rail')?.y||100;
+    const{wx,wy,noSpace,rail,band}=applySnap(bx,by,clipboard.comp,layout);
+    if(!noSpace){PLACED.push({comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null});draw();updateWT();}
   }
-  if((e.key==='Delete'||e.key==='Backspace')&&selectedComp){
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedComp&&document.activeElement===document.body){
     const idx=PLACED.indexOf(selectedComp);
     if(idx>=0){
       PLACED.splice(idx,1);
       for(let i=WIRES.length-1;i>=0;i--){if(WIRES[i].startP===selectedComp||WIRES[i].endP===selectedComp)WIRES.splice(i,1);}
-      selectedComp=null;draw();updateWT();
+      selectedComp=null;draw();updateWT();updateInfo();
     }
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 ['sel-model','nb-app','nb-born','gh-h','esp-r','thickness','sel-fil'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('input',()=>{draw();});
+  document.getElementById(id)?.addEventListener('input',()=>draw());
 });
 buildLib();
 setupFaceCanvas();
+setupPlanCanvas();
+setupDoorCanvas();
 draw();
 updateWT();
+updateInfo();
 </script>
 </body>
 </html>
