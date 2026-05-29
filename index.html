@@ -227,7 +227,8 @@ const RAIL_OFFSETS={};   // rail.label → décalage Y (mm)
 const RAIL_FRONT_Z={};   // rail.label → position Z face avant rail (mm depuis face avant panneau)
 let planViewMeta=null,planDepthDrag=null;
 let peLibDragActive=false; // PE en cours de drag depuis bibliothèque
-const COTE_HITS=[];        // zones cliquables cotations {x,y,r,inputId}
+const COTE_HITS=[];        // cotes cliquables vue face {x,y,r,val,min,max,onSubmit}
+const PLAN_COTE_HITS=[];   // cotes cliquables vue coupe
 let wireDragging=null;     // {wire,ptIdx} point intermédiaire fil en drag
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -267,6 +268,22 @@ function toggleWP(){
   el.classList.toggle('collapsed');
   const btn=el.querySelector('.panel-toggle');
   btn.textContent=el.classList.contains('collapsed')?'◀':'Filerie ▶';
+}
+
+// Input flottant au clic sur une cotation
+function showCoteInput(screenX,screenY,val,min,max,onSubmit){
+  const old=document.getElementById('_cote_inp');if(old)old.remove();
+  const inp=document.createElement('input');
+  inp.id='_cote_inp';inp.type='number';inp.value=Math.round(val);
+  inp.min=min;inp.max=max;inp.step=1;
+  inp.style.cssText=`position:fixed;left:${screenX-32}px;top:${screenY-14}px;width:70px;height:28px;font-size:13px;font-weight:700;padding:3px 7px;border:2.5px solid #1D9E75;border-radius:7px;background:#F6FFFC;color:#0A5040;z-index:9999;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.22);outline:none`;
+  document.body.appendChild(inp);inp.focus();inp.select();
+  function submit(){
+    const v=parseFloat(inp.value);if(inp.parentNode)inp.remove();
+    if(!isNaN(v)&&v>=min&&v<=max){onSubmit(v);draw();}
+  }
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}if(e.key==='Escape')inp.remove();e.stopPropagation();});
+  inp.addEventListener('blur',()=>setTimeout(()=>{if(document.getElementById('_cote_inp')===inp)submit();},180));
 }
 
 function updateInfo(){
@@ -313,16 +330,14 @@ function getLayout(){
       cy+=RAIL_H+espR;
     }
   }
-  // Rails borniers (bas)
-  for(let i=0;i<nbBorn+1;i++){
-    const gi=nbApp+1+i,ri=nbApp+i;
-    zones.push({type:'goulH',y:cy,h:ghH,idx:gi,sub:'born',label:`GH${gi+1}`});cy+=ghH;
-    if(i<nbBorn){
-      cy+=espR;
-      const lbl=`R${ri+1}`,off=RAIL_OFFSETS[lbl]||0;
-      zones.push({type:'rail',y:cy+off,h:RAIL_H,idx:ri,sub:'born',depth:RAIL_D_BORN,label:lbl,baseY:cy});
-      cy+=RAIL_H+espR;
-    }
+  // Rails borniers (bas) — la dernière GH app sert de transition, pas de GH dupliquée
+  for(let i=0;i<nbBorn;i++){
+    const ri=nbApp+1+i;
+    cy+=espR;
+    const lbl=`R${ri}`,off=RAIL_OFFSETS[lbl]||0;
+    zones.push({type:'rail',y:cy+off,h:RAIL_H,idx:ri-1,sub:'born',depth:RAIL_D_BORN,label:lbl,baseY:cy});
+    cy+=RAIL_H+espR;
+    zones.push({type:'goulH',y:cy,h:ghH,idx:nbApp+1+i,sub:'born',label:`GH${nbApp+2+i}`});cy+=ghH;
   }
   if(cutLineY===null)cutLineY=h/2;
   return{model,nbApp,nbBorn,ghH,espR,intX,intW,zones,m,w,h};
@@ -919,6 +934,7 @@ function drawPlanView(layout){
       planViewHandles.push({type:'railZ',zoneLabel:zone.label,canvasY:rFaceY,minZ:2,maxZ:railD-RAIL_DIN_H-2,scZ,OZ});
     }
     planViewMeta={OZ,scZ,thick,isAbove,isBelow,cutY,handles:planViewHandles,w,flip,OX};
+    PLAN_COTE_HITS.length=0; // réinitialisé ici après calcul du planViewMeta
   }
 
   // ── Cotation épaisseur
@@ -934,6 +950,12 @@ function drawPlanView(layout){
     ctx.beginPath();ctx.moveTo(OX+pw(w)+7,OZ+pd(thick));ctx.lineTo(OX+pw(w)+15,OZ+pd(thick));ctx.stroke();
     ctx.save();ctx.translate(OX+pw(w)+22,OZ+pd(thick)/2);ctx.rotate(Math.PI/2);
     ctx.textAlign='center';ctx.fillText(`ép.${Math.round(thick)}mm`,0,0);ctx.restore();
+    // Cote épaisseur fond → cliquable
+    PLAN_COTE_HITS.push({x:OX+pw(w)+22,y:OZ+pd(thick)/2,r:22,val:thick,min:60,max:150,
+      onSubmit:v=>{const el=document.getElementById('thickness');el.value=v;el.dispatchEvent(new Event('input'));}});
+    // Cote largeur → non modifiable directement
+    PLAN_COTE_HITS.push({x:OX+pw(w)/2,y:OZ-13,r:20,val:layout.w,min:600,max:800,
+      onSubmit:_=>alert('Modifiez la largeur via le menu "Modèle".')});
   }
 
   // ── Labels
@@ -1230,6 +1252,7 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
     ctx.textAlign='center';ctx.font=`${big?'600 ':''}${fs}px system-ui`;
     ctx.fillText(lbl,(x1+x2)/2,y-(big?6:4));
   }
+  // Cotation H totale (gauche) — cliquable → non éditable directement (modèle)
   dimW(sy(0)-24,sx(0),sx(w),`${w} mm`,true);
   dimW(sy(0)-13,sx(intX),sx(intX+intW),`${intW} mm`,false);
   dimH(sx(0)-34,sy(0),sy(h),`${h} mm`,true);
@@ -1238,11 +1261,23 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
     const cx=ex+(z.type==='rail'?13:0);
     const cy=(sy(z.y)+sy(z.y+z.h))/2;
     dimH(cx,sy(z.y),sy(z.y+z.h),`${z.h}`,false);
-    // Enregistrer zone cliquable : GH → gh-h, entre-rails → esp-r
-    if(z.type==='goulH')COTE_HITS.push({x:cx-10,y:cy,r:18,inputId:'gh-h'});
+    if(z.type==='goulH'){
+      // Cote hauteur GH → édite le champ gh-h
+      COTE_HITS.push({x:cx-10,y:cy,r:20,val:z.h,min:20,max:80,
+        onSubmit:v=>{const el=document.getElementById('gh-h');el.value=v;el.dispatchEvent(new Event('input'));}});
+    } else if(z.type==='rail'){
+      // Cote hauteur rail → non modifiable (fixe RAIL_H), mais affiche l'espacement
+    }
   });
-  // Cotes largeur cliquables
-  COTE_HITS.push({x:(sx(0)+sx(w))/2,y:sy(0)-24,r:18,inputId:'sel-model'});
+  // Cote hauteur totale (gauche) — édite nb-app via prompt simplifié
+  COTE_HITS.push({x:sx(0)-34,y:(sy(0)+sy(h))/2,r:20,val:h,min:600,max:2000,
+    onSubmit:_=>alert('Modifiez la hauteur via le menu "Modèle".')});
+  // Cote espacement rails (bas de chaque zone rail, côté droit)
+  zones.filter(z=>z.type==='rail').forEach(z=>{
+    const cx=ex+13+14,cy=(sy(z.y)+sy(z.y+z.h))/2;
+    COTE_HITS.push({x:cx,y:cy,r:16,val:espR,min:0,max:50,
+      onSubmit:v=>{const el=document.getElementById('esp-r');el.value=v;el.dispatchEvent(new Event('input'));}});
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1390,10 +1425,14 @@ function setupFaceCanvas(){
     const[,cutPY]=W2F(0,cutLineY||0);
     const my=e.clientY-r.top;
     const px_=e.clientX-r.left,py_=e.clientY-r.top;
-    // ── Cotes interactives (clic → focus champ correspondant)
+    // ── Cotes interactives (clic → input flottant éditable)
     if(FLAGS.cotes&&!wm.active){
       const chit=COTE_HITS.find(c=>c.r>0&&Math.hypot(px_-c.x,py_-c.y)<c.r);
-      if(chit&&chit.inputId){const inp=document.getElementById(chit.inputId);if(inp){inp.focus();inp.select();}return;}
+      if(chit&&chit.onSubmit){
+        const rect=cv.getBoundingClientRect();
+        showCoteInput(rect.left+chit.x,rect.top+chit.y,chit.val,chit.min,chit.max,chit.onSubmit);
+        return;
+      }
     }
     // ── Points intermédiaires fils — drag libre ou insertion par clic segment
     if(!wm.active){
@@ -1576,6 +1615,11 @@ function setupPlanCanvas(){
   cv.addEventListener('mousedown',e=>{
     const r=cv.getBoundingClientRect();
     const mx=e.clientX-r.left,my=e.clientY-r.top;
+    // ── Cotes plan cliquables (épaisseur, profondeur gorge…)
+    if(FLAGS.cotes&&PLAN_COTE_HITS.length){
+      const chit=PLAN_COTE_HITS.find(c=>Math.hypot(mx-c.x,my-c.y)<c.r);
+      if(chit&&chit.onSubmit){showCoteInput(r.left+chit.x,r.top+chit.y,chit.val,chit.min,chit.max,chit.onSubmit);return;}
+    }
     // Drag poignées gorge / profondeur / position rail Z
     if(planViewMeta&&planViewMeta.handles){
       const near=planViewMeta.handles.find(h=>Math.abs(my-h.canvasY)<7);
