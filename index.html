@@ -71,6 +71,23 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
 .resize-h{width:6px;flex-shrink:0;cursor:col-resize;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:3px;transition:background .1s}
 .resize-h:hover,.resize-h.dragging{background:rgba(24,95,165,.18)}
 .resize-h::after{content:'⋮';font-size:14px;color:#C0C0C0;user-select:none}
+/* Bibliothèque — menus déroulants */
+#lib-search{width:100%;box-sizing:border-box;font-size:11px;padding:4px 7px;border:.5px solid #D5D3CF;border-radius:6px;background:#FAFAFA;color:#1A1A18;margin-bottom:5px;flex-shrink:0}
+#lib-search:focus{outline:none;border-color:#5B9FD4;background:#fff}
+.lib-brand-hdr{font-size:10px;font-weight:700;padding:4px 7px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:3px 0 1px;user-select:none;flex-shrink:0}
+.lib-brand-hdr:hover{opacity:.85}
+.lib-brand-hdr .arrow{font-size:9px;transition:transform .15s}
+.lib-brand-hdr.open .arrow{transform:rotate(90deg)}
+.lib-brand-body{display:flex;flex-direction:column;gap:0;overflow:hidden;max-height:0;transition:max-height .2s ease}
+.lib-brand-body.open{max-height:2000px}
+.lib-cat-hdr{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px 1px;margin-top:3px;cursor:pointer;display:flex;justify-content:space-between;flex-shrink:0}
+.lib-cat-hdr:hover{color:#444}
+.lib-cat-body{display:flex;flex-direction:column;gap:0}
+.lib-cat-body.hidden{display:none}
+.conn-badge{font-size:7px;font-weight:700;padding:1px 3px;border-radius:3px;margin-left:3px;vertical-align:middle}
+.badge-xp{background:#FFF3CD;color:#856404;border:.5px solid #E0A800}
+.badge-xe{background:#D1ECF1;color:#0C5460;border:.5px solid #17A2B8}
+.lib-ref{font-size:8px;color:#AAA;display:block;margin-top:1px;font-family:monospace}
 /* Plate drop zone highlight */
 canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
 </style>
@@ -99,7 +116,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   </select></label>
   <label>Rails app <input type="number" id="nb-app" value="4" min="1" max="10" class="n48" title="Rails appareillage (haut)"></label>
   <label>Rails born <input type="number" id="nb-born" value="2" min="0" max="6" class="n48" title="Rails borniers (bas)"></label>
-  <label>GH mm <input type="number" id="gh-h" value="40" min="20" max="80" class="n48" title="Hauteur goulottes horizontales"></label>
+  <label>GH mm <input type="number" id="gh-h" value="40" min="20" max="200" class="n48" title="Hauteur goulottes horizontales"></label>
   <label>Esp.rails <input type="number" id="esp-r" value="20" min="0" max="50" class="n48"></label>
   <label>Ép.fond <input type="number" id="thickness" value="90" min="60" max="150" class="n48"></label>
   <div class="sep"></div>
@@ -186,53 +203,182 @@ const TOLE_EP=1.5; // épaisseur tôle S3D mm
 const CUT_EXT=120; // extension trait de coupe au-delà du fond mm
 
 // ═══════════════════════════════════════════════════════════════════════
-// BIBLIOTHÈQUE
+// BIBLIOTHÈQUE — Legrand DX3, Schneider Acti9/Resi9, Borniers, Accessoires
+// conn: 'std'=standard, 'xp'=peignable (XP), 'xe'=embrochable (XE)
 // ═══════════════════════════════════════════════════════════════════════
 const COMPS=[
-  // Sectionneurs
-  {id:'s2p',name:'Sect. 2P',sub:'iSW-NA 63A',     group:'Sectionneurs',    poles:2, modW:36,  modH:85, type:'sect',    color:'#854F0B'},
-  {id:'s4p',name:'Sect. 4P',sub:'iSW-NA 100A',    group:'Sectionneurs',    poles:4, modW:72,  modH:85, type:'sect',    color:'#854F0B'},
-  // iC60N (1P=18mm, 2P=36mm, 4P=72mm, H=85mm)
-  {id:'d1p',name:'iC60N 1P',sub:'6–63A 6kA',      group:'iC60N',           poles:1, modW:18,  modH:85, type:'disj',   color:'#185FA5'},
-  {id:'d2p',name:'iC60N 2P',sub:'6–63A 6kA',      group:'iC60N',           poles:2, modW:36,  modH:85, type:'disj',   color:'#185FA5'},
-  {id:'d4p',name:'iC60N 4P',sub:'6–63A 6kA',      group:'iC60N',           poles:4, modW:72,  modH:85, type:'disj',   color:'#185FA5'},
-  // Différentiels
-  {id:'df2',name:'iID 2P',  sub:'40A 30mA',        group:'Différentiels',   poles:2, modW:36,  modH:90, type:'diff',   color:'#0F6E56'},
-  {id:'df4',name:'iID 4P',  sub:'40A 30mA',        group:'Différentiels',   poles:4, modW:72,  modH:90, type:'diff',   color:'#0F6E56'},
-  // Accessoires
-  {id:'pg12',name:'Peigne 12P',sub:'pas 9mm',      group:'Accessoires',     poles:12,modW:108, modH:10, type:'peigne', color:'#993C1D'},
-  {id:'pg24',name:'Peigne 24P',sub:'pas 9mm',      group:'Accessoires',     poles:24,modW:216, modH:10, type:'peigne', color:'#993C1D'},
-  {id:'rep4',name:'Répart. 4B',sub:'4 barreaux',   group:'Accessoires',     poles:4, modW:60,  modH:40, type:'repartiteur',color:'#534AB7'},
-  // Répartiteurs de potentiel monopotentiel
-  {id:'rp5', name:'Rép.pot. 5P',sub:'5 points mono',group:'Accessoires',    poles:5, modW:45,  modH:18, type:'repot',    color:'#B06000'},
-  {id:'rp8', name:'Rép.pot. 8P',sub:'8 points mono',group:'Accessoires',    poles:8, modW:72,  modH:18, type:'repot',    color:'#B06000'},
-  // Phoenix Contact UTTB
-  {id:'ph15',name:'UTTB 1.5',sub:'5.2×51mm',       group:'Phoenix Contact', poles:1, modW:5.2, modH:51, type:'bornier',color:'#E85C00'},
-  {id:'ph25',name:'UTTB 2.5',sub:'6.2×51mm',       group:'Phoenix Contact', poles:1, modW:6.2, modH:51, type:'bornier',color:'#E85C00'},
-  {id:'ph6', name:'UTTB 6',  sub:'8.2×51mm',       group:'Phoenix Contact', poles:1, modW:8.2, modH:51, type:'bornier',color:'#E85C00'},
+  // ── LEGRAND DX3 — Sectionneurs
+  {id:'lgst2p63', name:'DX3 Sect.2P 63A', sub:'Réf.400710 — 17.5kA', brand:'Legrand DX3', group:'Sectionneurs', poles:2, modW:35, modH:85, type:'sect', color:'#005B96', ref:'400710'},
+  {id:'lgst2p100',name:'DX3 Sect.2P 100A',sub:'Réf.400711 — 17.5kA', brand:'Legrand DX3', group:'Sectionneurs', poles:2, modW:35, modH:85, type:'sect', color:'#005B96', ref:'400711'},
+  {id:'lgst4p63', name:'DX3 Sect.4P 63A', sub:'Réf.400720 — 17.5kA', brand:'Legrand DX3', group:'Sectionneurs', poles:4, modW:70, modH:85, type:'sect', color:'#005B96', ref:'400720'},
+  {id:'lgst4p100',name:'DX3 Sect.4P 100A',sub:'Réf.400721 — 17.5kA', brand:'Legrand DX3', group:'Sectionneurs', poles:4, modW:70, modH:85, type:'sect', color:'#005B96', ref:'400721'},
+
+  // ── LEGRAND DX3 — Disjoncteurs 1P (DX3-E, 6kA, courbe C)
+  {id:'lg1p6',  name:'DX3-E 1P  6A', sub:'Réf.407710  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407710', conn:'std'},
+  {id:'lg1p10', name:'DX3-E 1P 10A', sub:'Réf.407712  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407712', conn:'std'},
+  {id:'lg1p16', name:'DX3-E 1P 16A', sub:'Réf.407714  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407714', conn:'std'},
+  {id:'lg1p20', name:'DX3-E 1P 20A', sub:'Réf.407716  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407716', conn:'std'},
+  {id:'lg1p25', name:'DX3-E 1P 25A', sub:'Réf.407717  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407717', conn:'std'},
+  {id:'lg1p32', name:'DX3-E 1P 32A', sub:'Réf.407718  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407718', conn:'std'},
+  {id:'lg1p40', name:'DX3-E 1P 40A', sub:'Réf.407720  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407720', conn:'std'},
+  {id:'lg1p50', name:'DX3-E 1P 50A', sub:'Réf.407722  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407722', conn:'std'},
+  {id:'lg1p63', name:'DX3-E 1P 63A', sub:'Réf.407724  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407724', conn:'std'},
+  // XP peignable
+  {id:'lg1p16xp',name:'DX3-E 1P 16A XP',sub:'Réf.407774 Peignable',  brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407774', conn:'xp'},
+  {id:'lg1p20xp',name:'DX3-E 1P 20A XP',sub:'Réf.407776 Peignable',  brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407776', conn:'xp'},
+  {id:'lg1p25xp',name:'DX3-E 1P 25A XP',sub:'Réf.407777 Peignable',  brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407777', conn:'xp'},
+  {id:'lg1p32xp',name:'DX3-E 1P 32A XP',sub:'Réf.407778 Peignable',  brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407778', conn:'xp'},
+  // XE embrochable
+  {id:'lg1p16xe',name:'DX3-E 1P 16A XE',sub:'Réf.407834 Embrochable',brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407834', conn:'xe'},
+  {id:'lg1p20xe',name:'DX3-E 1P 20A XE',sub:'Réf.407836 Embrochable',brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407836', conn:'xe'},
+  {id:'lg1p25xe',name:'DX3-E 1P 25A XE',sub:'Réf.407837 Embrochable',brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407837', conn:'xe'},
+  {id:'lg1p32xe',name:'DX3-E 1P 32A XE',sub:'Réf.407838 Embrochable',brand:'Legrand DX3', group:'Disjoncteurs 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#005B96', ref:'407838', conn:'xe'},
+
+  // ── LEGRAND DX3 — Disjoncteurs 2P
+  {id:'lg2p6',  name:'DX3-E 2P  6A', sub:'Réf.407800  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407800', conn:'std'},
+  {id:'lg2p10', name:'DX3-E 2P 10A', sub:'Réf.407802  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407802', conn:'std'},
+  {id:'lg2p16', name:'DX3-E 2P 16A', sub:'Réf.407804  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407804', conn:'std'},
+  {id:'lg2p20', name:'DX3-E 2P 20A', sub:'Réf.407806  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407806', conn:'std'},
+  {id:'lg2p25', name:'DX3-E 2P 25A', sub:'Réf.407808  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407808', conn:'std'},
+  {id:'lg2p32', name:'DX3-E 2P 32A', sub:'Réf.407810  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407810', conn:'std'},
+  {id:'lg2p40', name:'DX3-E 2P 40A', sub:'Réf.407812  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407812', conn:'std'},
+  {id:'lg2p63', name:'DX3-E 2P 63A', sub:'Réf.407816  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407816', conn:'std'},
+  {id:'lg2p16xp',name:'DX3-E 2P 16A XP',sub:'Réf.407864 Peignable', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407864', conn:'xp'},
+  {id:'lg2p25xp',name:'DX3-E 2P 25A XP',sub:'Réf.407867 Peignable', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407867', conn:'xp'},
+  {id:'lg2p32xp',name:'DX3-E 2P 32A XP',sub:'Réf.407868 Peignable', brand:'Legrand DX3', group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407868', conn:'xp'},
+  {id:'lg2p16xe',name:'DX3-E 2P 16A XE',sub:'Réf.407904 Embrochable',brand:'Legrand DX3',group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407904', conn:'xe'},
+  {id:'lg2p25xe',name:'DX3-E 2P 25A XE',sub:'Réf.407907 Embrochable',brand:'Legrand DX3',group:'Disjoncteurs 2P', poles:2, modW:35, modH:85, type:'disj', color:'#005B96', ref:'407907', conn:'xe'},
+
+  // ── LEGRAND DX3 — Disjoncteurs 4P
+  {id:'lg4p6',  name:'DX3-E 4P  6A', sub:'Réf.407880  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407880', conn:'std'},
+  {id:'lg4p10', name:'DX3-E 4P 10A', sub:'Réf.407882  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407882', conn:'std'},
+  {id:'lg4p16', name:'DX3-E 4P 16A', sub:'Réf.407884  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407884', conn:'std'},
+  {id:'lg4p20', name:'DX3-E 4P 20A', sub:'Réf.407886  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407886', conn:'std'},
+  {id:'lg4p25', name:'DX3-E 4P 25A', sub:'Réf.407888  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407888', conn:'std'},
+  {id:'lg4p32', name:'DX3-E 4P 32A', sub:'Réf.407890  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407890', conn:'std'},
+  {id:'lg4p40', name:'DX3-E 4P 40A', sub:'Réf.407892  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407892', conn:'std'},
+  {id:'lg4p63', name:'DX3-E 4P 63A', sub:'Réf.407896  6kA courbe C', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407896', conn:'std'},
+  {id:'lg4p25xp',name:'DX3-E 4P 25A XP',sub:'Réf.407947 Peignable', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407947', conn:'xp'},
+  {id:'lg4p40xp',name:'DX3-E 4P 40A XP',sub:'Réf.407950 Peignable', brand:'Legrand DX3', group:'Disjoncteurs 4P', poles:4, modW:70, modH:85, type:'disj', color:'#005B96', ref:'407950', conn:'xp'},
+
+  // ── LEGRAND DX3 — Disjoncteurs différentiels (DDX3-E, 1P+N)
+  {id:'lgdd6',  name:'DDX3-E 1P+N  6A 30mA',sub:'Réf.411662 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411662'},
+  {id:'lgdd10', name:'DDX3-E 1P+N 10A 30mA',sub:'Réf.411664 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411664'},
+  {id:'lgdd16', name:'DDX3-E 1P+N 16A 30mA',sub:'Réf.411666 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411666'},
+  {id:'lgdd20', name:'DDX3-E 1P+N 20A 30mA',sub:'Réf.411668 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411668'},
+  {id:'lgdd25', name:'DDX3-E 1P+N 25A 30mA',sub:'Réf.411670 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411670'},
+  {id:'lgdd32', name:'DDX3-E 1P+N 32A 30mA',sub:'Réf.411672 AC',  brand:'Legrand DX3', group:'Différentiels 1P+N', poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'411672'},
+  // TX3 blocs différentiels 2P
+  {id:'lgtx2p25', name:'TX3 2P 25A 30mA', sub:'Réf.403013 AC 2P', brand:'Legrand DX3', group:'Blocs diff. 2P',     poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'403013'},
+  {id:'lgtx2p40', name:'TX3 2P 40A 30mA', sub:'Réf.403015 AC 2P', brand:'Legrand DX3', group:'Blocs diff. 2P',     poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'403015'},
+  {id:'lgtx2p63', name:'TX3 2P 63A 30mA', sub:'Réf.403017 AC 2P', brand:'Legrand DX3', group:'Blocs diff. 2P',     poles:2, modW:35, modH:85, type:'diff', color:'#005B96', ref:'403017'},
+  {id:'lgtx4p40', name:'TX3 4P 40A 30mA', sub:'Réf.403045 AC 4P', brand:'Legrand DX3', group:'Blocs diff. 4P',     poles:4, modW:70, modH:85, type:'diff', color:'#005B96', ref:'403045'},
+  {id:'lgtx4p63', name:'TX3 4P 63A 30mA', sub:'Réf.403047 AC 4P', brand:'Legrand DX3', group:'Blocs diff. 4P',     poles:4, modW:70, modH:85, type:'diff', color:'#005B96', ref:'403047'},
+
+  // ── SCHNEIDER ACTI9 — Sectionneurs iSW-NA
+  {id:'sw2p40', name:'iSW-NA 2P 40A', sub:'A9S60240 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:2, modW:36, modH:85, type:'sect', color:'#009c41', ref:'A9S60240'},
+  {id:'sw2p63', name:'iSW-NA 2P 63A', sub:'A9S60263 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:2, modW:36, modH:85, type:'sect', color:'#009c41', ref:'A9S60263'},
+  {id:'sw2p100',name:'iSW-NA 2P 100A',sub:'A9S60299 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:2, modW:36, modH:85, type:'sect', color:'#009c41', ref:'A9S60299'},
+  {id:'sw4p40', name:'iSW-NA 4P 40A', sub:'A9S60440 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:4, modW:72, modH:85, type:'sect', color:'#009c41', ref:'A9S60440'},
+  {id:'sw4p63', name:'iSW-NA 4P 63A', sub:'A9S60463 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:4, modW:72, modH:85, type:'sect', color:'#009c41', ref:'A9S60463'},
+  {id:'sw4p100',name:'iSW-NA 4P 100A',sub:'A9S60499 — 14.5kA',brand:'Schneider Acti9', group:'Sectionneurs', poles:4, modW:72, modH:85, type:'sect', color:'#009c41', ref:'A9S60499'},
+
+  // ── SCHNEIDER ACTI9 iC60N — 1P (17.5mm, 6kA cour.C)
+  {id:'d1p6',  name:'iC60N 1P  6A', sub:'A9F74106  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74106', conn:'std'},
+  {id:'d1p10', name:'iC60N 1P 10A', sub:'A9F74110  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74110', conn:'std'},
+  {id:'d1p16', name:'iC60N 1P 16A', sub:'A9F74116  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74116', conn:'std'},
+  {id:'d1p20', name:'iC60N 1P 20A', sub:'A9F74120  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74120', conn:'std'},
+  {id:'d1p25', name:'iC60N 1P 25A', sub:'A9F74125  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74125', conn:'std'},
+  {id:'d1p32', name:'iC60N 1P 32A', sub:'A9F74132  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74132', conn:'std'},
+  {id:'d1p40', name:'iC60N 1P 40A', sub:'A9F74140  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74140', conn:'std'},
+  {id:'d1p50', name:'iC60N 1P 50A', sub:'A9F74150  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74150', conn:'std'},
+  {id:'d1p63', name:'iC60N 1P 63A', sub:'A9F74163  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74163', conn:'std'},
+  // XP peignable
+  {id:'d1p',   name:'iC60N 1P 6-63A',sub:'A9F7xx XP peignable', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9F7xx', conn:'xp'},
+  // XE embrochable (socle iC60)
+  {id:'d1pxe', name:'iC60N 1P 6-63A',sub:'XE + socle A9C70100', brand:'Schneider Acti9', group:'iC60N 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#009c41', ref:'A9C701xx', conn:'xe'},
+
+  // ── SCHNEIDER ACTI9 iC60N — 2P
+  {id:'d2p6',  name:'iC60N 2P  6A', sub:'A9F74206  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74206', conn:'std'},
+  {id:'d2p10', name:'iC60N 2P 10A', sub:'A9F74210  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74210', conn:'std'},
+  {id:'d2p16', name:'iC60N 2P 16A', sub:'A9F74216  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74216', conn:'std'},
+  {id:'d2p20', name:'iC60N 2P 20A', sub:'A9F74220  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74220', conn:'std'},
+  {id:'d2p25', name:'iC60N 2P 25A', sub:'A9F74225  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74225', conn:'std'},
+  {id:'d2p32', name:'iC60N 2P 32A', sub:'A9F74232  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74232', conn:'std'},
+  {id:'d2p40', name:'iC60N 2P 40A', sub:'A9F74240  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74240', conn:'std'},
+  {id:'d2p63', name:'iC60N 2P 63A', sub:'A9F74263  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F74263', conn:'std'},
+  {id:'d2pxp', name:'iC60N 2P XP',  sub:'A9F7xx XP peignable',  brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9F7xxP', conn:'xp'},
+  {id:'d2pxe', name:'iC60N 2P XE',  sub:'XE + socle A9C70200',  brand:'Schneider Acti9', group:'iC60N 2P', poles:2, modW:35, modH:85, type:'disj', color:'#009c41', ref:'A9C702xx', conn:'xe'},
+
+  // ── SCHNEIDER ACTI9 iC60N — 3P
+  {id:'d3p6',  name:'iC60N 3P  6A', sub:'A9F74306  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74306', conn:'std'},
+  {id:'d3p10', name:'iC60N 3P 10A', sub:'A9F74310  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74310', conn:'std'},
+  {id:'d3p16', name:'iC60N 3P 16A', sub:'A9F74316  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74316', conn:'std'},
+  {id:'d3p20', name:'iC60N 3P 20A', sub:'A9F74320  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74320', conn:'std'},
+  {id:'d3p25', name:'iC60N 3P 25A', sub:'A9F74325  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74325', conn:'std'},
+  {id:'d3p32', name:'iC60N 3P 32A', sub:'A9F74332  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74332', conn:'std'},
+  {id:'d3p40', name:'iC60N 3P 40A', sub:'A9F74340  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74340', conn:'std'},
+  {id:'d3p63', name:'iC60N 3P 63A', sub:'A9F74363  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#009c41', ref:'A9F74363', conn:'std'},
+
+  // ── SCHNEIDER ACTI9 iC60N — 4P
+  {id:'d4p6',  name:'iC60N 4P  6A', sub:'A9F74406  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74406', conn:'std'},
+  {id:'d4p10', name:'iC60N 4P 10A', sub:'A9F74410  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74410', conn:'std'},
+  {id:'d4p16', name:'iC60N 4P 16A', sub:'A9F74416  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74416', conn:'std'},
+  {id:'d4p20', name:'iC60N 4P 20A', sub:'A9F74420  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74420', conn:'std'},
+  {id:'d4p25', name:'iC60N 4P 25A', sub:'A9F74425  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74425', conn:'std'},
+  {id:'d4p32', name:'iC60N 4P 32A', sub:'A9F74432  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74432', conn:'std'},
+  {id:'d4p40', name:'iC60N 4P 40A', sub:'A9F74440  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74440', conn:'std'},
+  {id:'d4p63', name:'iC60N 4P 63A', sub:'A9F74463  6kA cour.C', brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F74463', conn:'std'},
+  {id:'d4pxp', name:'iC60N 4P XP',  sub:'A9F7xx XP peignable',  brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9F7xxP', conn:'xp'},
+  {id:'d4pxe', name:'iC60N 4P XE',  sub:'XE + socle A9C70400',  brand:'Schneider Acti9', group:'iC60N 4P', poles:4, modW:70, modH:85, type:'disj', color:'#009c41', ref:'A9C704xx', conn:'xe'},
+
+  // ── SCHNEIDER ACTI9 — Interrupteurs différentiels iID
+  {id:'df2',  name:'iID 2P 25A 30mA',  sub:'A9R11225 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 2P', poles:2, modW:35,  modH:90, type:'diff', color:'#009c41', ref:'A9R11225'},
+  {id:'df2b', name:'iID 2P 40A 30mA',  sub:'A9R11240 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 2P', poles:2, modW:35,  modH:90, type:'diff', color:'#009c41', ref:'A9R11240'},
+  {id:'df2c', name:'iID 2P 63A 30mA',  sub:'A9R11263 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 2P', poles:2, modW:35,  modH:90, type:'diff', color:'#009c41', ref:'A9R11263'},
+  {id:'df2r', name:'iID 2P 25A 300mA', sub:'A9R12225 AC 300mA', brand:'Schneider Acti9', group:'Diff. iID 2P', poles:2, modW:35,  modH:90, type:'diff', color:'#009c41', ref:'A9R12225'},
+  {id:'df2s', name:'iID 2P 40A 300mA', sub:'A9R12240 AC 300mA', brand:'Schneider Acti9', group:'Diff. iID 2P', poles:2, modW:35,  modH:90, type:'diff', color:'#009c41', ref:'A9R12240'},
+  {id:'df4',  name:'iID 4P 25A 30mA',  sub:'A9R11425 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 4P', poles:4, modW:70,  modH:90, type:'diff', color:'#009c41', ref:'A9R11425'},
+  {id:'df4b', name:'iID 4P 40A 30mA',  sub:'A9R11440 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 4P', poles:4, modW:70,  modH:90, type:'diff', color:'#009c41', ref:'A9R11440'},
+  {id:'df4c', name:'iID 4P 63A 30mA',  sub:'A9R11463 AC 30mA',  brand:'Schneider Acti9', group:'Diff. iID 4P', poles:4, modW:70,  modH:90, type:'diff', color:'#009c41', ref:'A9R11463'},
+  {id:'df4r', name:'iID 4P 40A 300mA', sub:'A9R12440 AC 300mA', brand:'Schneider Acti9', group:'Diff. iID 4P', poles:4, modW:70,  modH:90, type:'diff', color:'#009c41', ref:'A9R12440'},
+
+  // ── ACCESSOIRES
+  {id:'pg12', name:'Peigne 12P', sub:'pas 9mm',      brand:'Accessoires', group:'Peignes/Barres', poles:12,modW:108, modH:10, type:'peigne', color:'#993C1D'},
+  {id:'pg24', name:'Peigne 24P', sub:'pas 9mm',      brand:'Accessoires', group:'Peignes/Barres', poles:24,modW:216, modH:10, type:'peigne', color:'#993C1D'},
+  {id:'rep4', name:'Répart. 4B', sub:'4 barreaux',   brand:'Accessoires', group:'Peignes/Barres', poles:4, modW:60,  modH:40, type:'repartiteur',color:'#534AB7'},
+  {id:'rp5',  name:'Rép.pot. 5P',sub:'5 pts monopot',brand:'Accessoires', group:'Peignes/Barres', poles:5, modW:45,  modH:18, type:'repot', color:'#B06000'},
+  {id:'rp8',  name:'Rép.pot. 8P',sub:'8 pts monopot',brand:'Accessoires', group:'Peignes/Barres', poles:8, modW:72,  modH:18, type:'repot', color:'#B06000'},
+
+  // ── BORNIERS Phoenix Contact UTTB
+  {id:'ph15',name:'UTTB 1.5', sub:'5.2×51mm Réf.3044088', brand:'Borniers', group:'Phoenix Contact', poles:1, modW:5.2, modH:51, type:'bornier',color:'#E85C00'},
+  {id:'ph25',name:'UTTB 2.5', sub:'6.2×51mm Réf.3044130', brand:'Borniers', group:'Phoenix Contact', poles:1, modW:6.2, modH:51, type:'bornier',color:'#E85C00'},
+  {id:'ph6', name:'UTTB 6',   sub:'8.2×51mm Réf.3044172', brand:'Borniers', group:'Phoenix Contact', poles:1, modW:8.2, modH:51, type:'bornier',color:'#E85C00'},
   // Schneider Linergy TR
-  {id:'sn15',name:'Linergy 1.5',sub:'5.2×55mm',    group:'Schneider Linergy',poles:1,modW:5.2, modH:55, type:'bornier',color:'#3DBA4C'},
-  {id:'sn25',name:'Linergy 2.5',sub:'6.2×55mm',    group:'Schneider Linergy',poles:1,modW:6.2, modH:55, type:'bornier',color:'#3DBA4C'},
-  {id:'sn6', name:'Linergy 6',  sub:'8.2×55mm',    group:'Schneider Linergy',poles:1,modW:8.2, modH:55, type:'bornier',color:'#3DBA4C'},
+  {id:'sn15',name:'Linergy 1.5',sub:'5.2×55mm NSYTRR15',  brand:'Borniers', group:'Schneider Linergy',poles:1,modW:5.2, modH:55, type:'bornier',color:'#3DBA4C'},
+  {id:'sn25',name:'Linergy 2.5',sub:'6.2×55mm NSYTRR25',  brand:'Borniers', group:'Schneider Linergy',poles:1,modW:6.2, modH:55, type:'bornier',color:'#3DBA4C'},
+  {id:'sn6', name:'Linergy 6',  sub:'8.2×55mm NSYTRR6',   brand:'Borniers', group:'Schneider Linergy',poles:1,modW:8.2, modH:55, type:'bornier',color:'#3DBA4C'},
   // Wago 2002
-  {id:'wg15',name:'Wago 1.5',sub:'5×51mm',         group:'Wago 2002',       poles:1, modW:5,   modH:51, type:'bornier',color:'#C89800'},
-  {id:'wg25',name:'Wago 2.5',sub:'6×51mm',         group:'Wago 2002',       poles:1, modW:6,   modH:51, type:'bornier',color:'#C89800'},
-  {id:'wg6', name:'Wago 6',  sub:'8×51mm',         group:'Wago 2002',       poles:1, modW:8,   modH:51, type:'bornier',color:'#C89800'},
-  // Entrelec/ERICO
-  {id:'en10',name:'Entrelec 10',sub:'10×61mm',     group:'Entrelec',        poles:1, modW:10,  modH:61, type:'bornier',color:'#7A5E40'},
-  {id:'en16',name:'Entrelec 16',sub:'12×61mm',     group:'Entrelec',        poles:1, modW:12,  modH:61, type:'bornier',color:'#7A5E40'},
-  {id:'en25',name:'Entrelec 25',sub:'16×65mm',     group:'Entrelec',        poles:1, modW:16,  modH:65, type:'bornier',color:'#7A5E40'},
-  // Presse-étoupes (PE) — pose en bande haute ou basse
-  {id:'pe16',name:'PE ISO 16',sub:'Ø16mm — M16',   group:'Presse-étoupes',  poles:1, modW:16,  modH:16, type:'petoupe',color:'#505050',isoD:16},
-  {id:'pe20',name:'PE ISO 20',sub:'Ø20mm — M20',   group:'Presse-étoupes',  poles:1, modW:20,  modH:20, type:'petoupe',color:'#505050',isoD:20},
-  {id:'pe26',name:'PE ISO 26',sub:'Ø26mm — M25',   group:'Presse-étoupes',  poles:1, modW:26,  modH:26, type:'petoupe',color:'#505050',isoD:26},
-  {id:'pe32',name:'PE ISO 32',sub:'Ø32mm — M32',   group:'Presse-étoupes',  poles:1, modW:32,  modH:32, type:'petoupe',color:'#505050',isoD:32},
-  // Voyants 22mm (pose sur porte uniquement)
-  {id:'vv',  name:'Voyant vert',  sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#00A830'},
-  {id:'vr',  name:'Voyant rouge', sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#CC1010'},
-  {id:'vo',  name:'Voyant orange',sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#E07000'},
-  {id:'vb',  name:'Voyant blanc', sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#E0E0E0'},
-  {id:'vbl', name:'Voyant bleu',  sub:'Ø22mm LED', group:'Signalisation',   poles:1, modW:22,  modH:22, type:'voyant', color:'#0050CC'},
+  {id:'wg15',name:'Wago 1.5', sub:'5×51mm 2002-1201',   brand:'Borniers', group:'Wago 2002',       poles:1, modW:5, modH:51, type:'bornier',color:'#C89800'},
+  {id:'wg25',name:'Wago 2.5', sub:'6×51mm 2002-1221',   brand:'Borniers', group:'Wago 2002',       poles:1, modW:6, modH:51, type:'bornier',color:'#C89800'},
+  {id:'wg6', name:'Wago 6',   sub:'8×51mm 2002-1261',   brand:'Borniers', group:'Wago 2002',       poles:1, modW:8, modH:51, type:'bornier',color:'#C89800'},
+  // Entrelec/ABB
+  {id:'en10',name:'Entrelec 10',sub:'10×61mm 1SNA165552R',brand:'Borniers', group:'Entrelec/ABB',   poles:1, modW:10, modH:61, type:'bornier',color:'#7A5E40'},
+  {id:'en16',name:'Entrelec 16',sub:'12×61mm 1SNA165553R',brand:'Borniers', group:'Entrelec/ABB',   poles:1, modW:12, modH:61, type:'bornier',color:'#7A5E40'},
+  {id:'en25',name:'Entrelec 25',sub:'16×65mm 1SNA165555R',brand:'Borniers', group:'Entrelec/ABB',   poles:1, modW:16, modH:65, type:'bornier',color:'#7A5E40'},
+
+  // ── PRESSE-ÉTOUPES
+  {id:'pe16',name:'PE ISO 16',sub:'Ø16mm — M16',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:16,modH:16,type:'petoupe',color:'#505050',isoD:16},
+  {id:'pe20',name:'PE ISO 20',sub:'Ø20mm — M20',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:20,modH:20,type:'petoupe',color:'#505050',isoD:20},
+  {id:'pe26',name:'PE ISO 26',sub:'Ø26mm — M25',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:26,modH:26,type:'petoupe',color:'#505050',isoD:26},
+  {id:'pe32',name:'PE ISO 32',sub:'Ø32mm — M32',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:32,modH:32,type:'petoupe',color:'#505050',isoD:32},
+
+  // ── SIGNALISATION (porte)
+  {id:'vv', name:'Voyant vert',  sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#00A830'},
+  {id:'vr', name:'Voyant rouge', sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#CC1010'},
+  {id:'vo', name:'Voyant orange',sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#E07000'},
+  {id:'vb', name:'Voyant blanc', sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#D8D8D8'},
+  {id:'vbl',name:'Voyant bleu',  sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#0050CC'},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -801,8 +947,10 @@ function draw(){
   // ── Composants fond
   PLACED.forEach(p=>{if(p.type==='comp')drawComp(ctx,p,sc);});
 
-  // ── Fils
+  // ── Fils (dessinés APRÈS les composants pour toujours être visibles)
+  ctx.save();
   WIRES.forEach(wire=>drawWire(ctx,wire,sc,layout));
+  ctx.restore();
 
   // ── Preview fil en cours
   if(wm.active&&wm.startP){
@@ -1375,9 +1523,9 @@ function drawWire(ctx,wire,sc,layout){
   const sec=wire.section,minR=BEND_R[sec]||20;
   const lw=Math.max(1.2,wireR(sec)*sc*2),hl=wire.highlighted;
   const wCol=wire.color||'#C47820';
-  // Ombre/halo
-  ctx.strokeStyle=hl?'rgba(220,120,0,.85)':wCol+'55';
-  ctx.lineWidth=lw+2.5;ctx.lineCap='round';ctx.lineJoin='round';
+  // Halo blanc pour visibilité maximale sur tout fond (capot ou fond)
+  ctx.strokeStyle=hl?'rgba(255,180,0,.7)':'rgba(255,255,255,0.75)';
+  ctx.lineWidth=lw+3;ctx.lineCap='round';ctx.lineJoin='round';
   drawSpline(ctx,wire.pts,minR,sc);ctx.stroke();
   // Fil couleur réelle
   ctx.strokeStyle=hl?'#FF9500':wCol;ctx.lineWidth=lw;
@@ -1612,8 +1760,8 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
     dimH(cx,sy(z.y),sy(z.y+z.h),`${z.h}`,false);
     if(z.type==='goulH'){
       // Cote hauteur GH → édite le champ gh-h
-      COTE_HITS.push({x:cx-10,y:cy,r:20,val:z.h,min:20,max:80,
-        onSubmit:v=>{const el=document.getElementById('gh-h');el.value=v;el.dispatchEvent(new Event('input'));}});
+      COTE_HITS.push({x:cx-10,y:cy,r:20,val:z.h,min:20,max:200,
+        onSubmit:v=>{const el=document.getElementById('gh-h');el.value=v;el.dispatchEvent(new Event('input'));draw();}});
     } else if(z.type==='rail'){
       // Cote hauteur rail → non modifiable (fixe RAIL_H), mais affiche l'espacement
     }
@@ -1761,24 +1909,78 @@ function exportHTML(){
 // ═══════════════════════════════════════════════════════════════════════
 // BIBLIOTHÈQUE
 // ═══════════════════════════════════════════════════════════════════════
+const BRAND_COLORS={'Legrand DX3':'#005B96','Schneider Acti9':'#009c41',
+  'Borniers':'#E85C00','Accessoires':'#534AB7',
+  'Presse-étoupes':'#505050','Signalisation':'#6B3DA6'};
+
 function buildLib(){
   const panel=document.getElementById('lib');
   const existingToggle=panel.querySelector('.panel-toggle');
   panel.innerHTML='';
   if(existingToggle)panel.appendChild(existingToggle);
+
+  // Titre
   const hdr=document.createElement('div');
-  hdr.style.cssText='font-size:10px;font-weight:700;color:#BBBBB5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;flex-shrink:0';
+  hdr.style.cssText='font-size:10px;font-weight:700;color:#BBBBB5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;flex-shrink:0';
   hdr.textContent='Bibliothèque';panel.appendChild(hdr);
-  const groups=[...new Set(COMPS.map(c=>c.group))];
-  groups.forEach(g=>{
-    const sec=document.createElement('div');sec.className='lib-sec';sec.textContent=g;panel.appendChild(sec);
-    COMPS.filter(c=>c.group===g).forEach(c=>{
-      const d=document.createElement('div');d.className='lib-item';
-      d.innerHTML=`<div class="li-chip" style="background:${c.color}"></div><div class="li-info"><div class="li-name">${c.name}</div><div class="li-sub">${c.sub}</div></div>`;
-      d.title=c.type==='petoupe'?'Glisser sur vue plaque haute/basse OU sur la zone haute/basse du fond':
-              c.type==='voyant'?'Glisser sur la porte (bouton Porte requis)':'Glisser sur un rail DIN';
-      d.addEventListener('mousedown',e=>{e.preventDefault();startLibDrag(e,c);});
-      panel.appendChild(d);
+
+  // Champ de recherche
+  const srch=document.createElement('input');
+  srch.id='lib-search';srch.type='text';srch.placeholder='Rechercher… nom, réf, ampérage';
+  panel.appendChild(srch);
+
+  // Grouper par marque puis par catégorie
+  const brands=[...new Set(COMPS.map(c=>c.brand))];
+  const brandEls={};
+
+  brands.forEach(brand=>{
+    const bc=BRAND_COLORS[brand]||'#555';
+    const bHdr=document.createElement('div');
+    bHdr.className='lib-brand-hdr';
+    bHdr.style.cssText=`background:${bc}22;color:${bc};border:.5px solid ${bc}55`;
+    bHdr.innerHTML=`<span>${brand}</span><span class="arrow">▶</span>`;
+    const bBody=document.createElement('div');bBody.className='lib-brand-body';
+    bHdr.addEventListener('click',()=>{bHdr.classList.toggle('open');bBody.classList.toggle('open');});
+    panel.appendChild(bHdr);panel.appendChild(bBody);
+
+    const cats=[...new Set(COMPS.filter(c=>c.brand===brand).map(c=>c.group))];
+    cats.forEach(cat=>{
+      const cHdr=document.createElement('div');cHdr.className='lib-cat-hdr';
+      cHdr.innerHTML=`<span>${cat}</span><span style="font-size:8px">▾</span>`;
+      const cBody=document.createElement('div');cBody.className='lib-cat-body';
+      cHdr.addEventListener('click',()=>cBody.classList.toggle('hidden'));
+      bBody.appendChild(cHdr);bBody.appendChild(cBody);
+
+      COMPS.filter(c=>c.brand===brand&&c.group===cat).forEach(c=>{
+        const d=document.createElement('div');d.className='lib-item';d._comp=c;
+        const badge=c.conn==='xp'?'<span class="conn-badge badge-xp">XP</span>':
+                    c.conn==='xe'?'<span class="conn-badge badge-xe">XE</span>':'';
+        const refLine=c.ref?`<span class="lib-ref">${c.ref} ${c.modW}×${c.modH}mm</span>`:'';
+        d.innerHTML=`<div class="li-chip" style="background:${c.color}"></div><div class="li-info"><div class="li-name">${c.name}${badge}</div><div class="li-sub">${c.sub}</div>${refLine}</div>`;
+        d.title=c.type==='petoupe'?'Glisser sur zone haute/basse du fond ou vue plaque':
+                c.type==='voyant'?'Glisser sur la porte (bouton Porte requis)':
+                `${c.name} — ${c.ref||''} ${c.modW}×${c.modH}mm`;
+        d.addEventListener('mousedown',e=>{e.preventDefault();startLibDrag(e,c);});
+        cBody.appendChild(d);
+      });
+    });
+    brandEls[brand]={hdr:bHdr,body:bBody};
+  });
+
+  // Recherche temps réel
+  srch.addEventListener('input',()=>{
+    const q=srch.value.trim().toLowerCase();
+    if(!q){
+      Object.values(brandEls).forEach(({hdr:h,body:b})=>{h.classList.remove('open');b.classList.remove('open');});
+      panel.querySelectorAll('.lib-item').forEach(d=>d.style.display='');
+      panel.querySelectorAll('.lib-cat-body').forEach(b=>b.classList.remove('hidden'));
+      return;
+    }
+    Object.values(brandEls).forEach(({hdr:h,body:b})=>{h.classList.add('open');b.classList.add('open');});
+    panel.querySelectorAll('.lib-cat-body').forEach(b=>b.classList.remove('hidden'));
+    panel.querySelectorAll('.lib-item').forEach(d=>{
+      const c=d._comp;if(!c)return;
+      d.style.display=(c.name+c.sub+(c.ref||'')+(c.group||'')).toLowerCase().includes(q)?'':'none';
     });
   });
 }
