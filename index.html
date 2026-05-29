@@ -50,6 +50,9 @@
   <div class="sep"></div>
   <label title="Longueur câble joint de porte pour voyants">Joint porte <input type="number" id="door-gap" value="500" min="100" max="3000" class="n48"> mm</label>
   <div class="sep"></div>
+  <button class="tbtn" onclick="undo()" title="Annuler (Ctrl+Z)">↩ Annuler</button>
+  <button class="tbtn" onclick="redo()" title="Rétablir (Ctrl+Y)">↪ Rétablir</button>
+  <div class="sep"></div>
   <button class="tbtn red" onclick="clearAll()">Vider</button>
   <button class="tbtn" onclick="exportBOM()" title="Exporter nomenclature (BOM)">BOM</button>
   <button class="tbtn" onclick="if(confirm('Effacer la session sauvegardée ?')){localStorage.removeItem('ep_v2');location.reload();}">↺ Session</button>
@@ -62,6 +65,7 @@
   <button class="vtab" data-view="plan" onclick="setView('plan')">Coupe A-A</button>
   <button class="vtab" data-view="plaques" onclick="setView('plaques')">Plaques PE</button>
   <button class="vtab" data-view="porte" onclick="setView('porte')">Porte</button>
+  <button class="vtab" data-view="iso" onclick="setView('iso')">Vue 3D</button>
 </div>
 <div id="zoom-bar" style="display:flex;align-items:center;gap:5px;flex-shrink:0">
   <button class="tbtn" style="padding:2px 7px;font-size:13px;line-height:1" onclick="setZoom(faceZoom/1.18)" title="Dézoomer (Ctrl+-)">−</button>
@@ -84,6 +88,7 @@
     <canvas id="cv-top" style="display:none"></canvas>
     <canvas id="cv-bot" style="display:none"></canvas>
     <canvas id="cv-door" style="display:none"></canvas>
+    <canvas id="cv-iso" style="display:none"></canvas>
   </div>
   <div class="resize-h" id="rh-wp" title="Redimensionner tableau filerie"></div>
   <div id="wp">
@@ -115,6 +120,7 @@ setupDoorCanvas();
 setupResize('rh-lib','lib','left',80,320);
 setupResize('rh-wp','wp','right',160,500);
 const _restored=loadSession();
+snapshot(); // état initial dans l'historique undo
 draw();
 updateWT();
 updateInfo();

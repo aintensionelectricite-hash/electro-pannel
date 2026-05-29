@@ -86,11 +86,14 @@ function setView(v){
   document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
   const face=v==='all'||v==='face',plan=v==='all'||v==='plan';
   const plaques=v==='all'||v==='plaques',porte=(v==='all'||v==='porte')&&doorVisible;
+  const iso=v==='iso';
   document.getElementById('cv-face').style.display=face?'block':'none';
   document.getElementById('cv-plan').style.display=plan?'block':'none';
   document.getElementById('cv-top').style.display=plaques?'block':'none';
   document.getElementById('cv-bot').style.display=plaques?'block':'none';
   document.getElementById('cv-door').style.display=porte?'block':'none';
+  document.getElementById('cv-iso').style.display=iso?'block':'none';
+  if(iso)draw();
 }
 
 // ── Collapse panneaux
@@ -776,8 +779,8 @@ function setupFaceCanvas(){
       }
     }
     // Clic sur œils → toggle direction
-    const sc=getSc(),cy=cutPY;
-    const x0=58-18,x1=58+getLayout().w*sc+18;
+    const sc=getSc()*faceZoom,cy=cutPY;
+    const x0=58+facePanX-18,x1=58+facePanX+getLayout().w*sc+18;
     if(Math.abs(my-cy)<10&&(Math.abs(e.clientX-r.left-x0)<14||Math.abs(e.clientX-r.left-x1)<14)){
       cutDir*=-1;draw();return;
     }
@@ -1019,6 +1022,9 @@ function setupDoorCanvas(){
 // ═══════════════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
+  // Undo / Redo
+  if(e.ctrlKey&&e.key.toLowerCase()==='z'&&!e.shiftKey&&document.activeElement===document.body){e.preventDefault();undo();return;}
+  if(e.ctrlKey&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&document.activeElement===document.body){e.preventDefault();redo();return;}
   // Zoom clavier Ctrl+0 (reset), Ctrl+= (in), Ctrl+- (out)
   if(e.ctrlKey&&(e.key==='0'||e.key==='Numpad0')){e.preventDefault();setZoom(1,true);return;}
   if(e.ctrlKey&&(e.key==='='||e.key==='+')){e.preventDefault();setZoom(faceZoom*1.18);return;}
@@ -1067,10 +1073,71 @@ function setupResize(handleId,targetId,side,minW,maxW){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// UNDO / REDO
+// ═══════════════════════════════════════════════════════════════════════
+const HISTORY=[];
+let historyIdx=-1;
+let _inRestore=false;
+
+function _captureState(){
+  return JSON.stringify({
+    placed:PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label,railLabel:p.railRef?.label||null,band:p.band||null})),
+    doorPlaced:DOOR_PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label})),
+    wires:WIRES.map(w=>({id:w.id,section:w.section,color:w.color,wtype:w.wtype,
+      sLabel:w.startP?.label||null,sPtId:w.startPtId,eLabel:w.endP?.label||null,ePtId:w.endPtId,pts:w.pts})),
+    railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
+    wireCount,peCount,voyantCount
+  });
+}
+
+function snapshot(){
+  if(_inRestore)return;
+  if(historyIdx<HISTORY.length-1)HISTORY.splice(historyIdx+1);
+  HISTORY.push(_captureState());
+  if(HISTORY.length>60){HISTORY.shift();}else{historyIdx++;}
+}
+
+function _applyState(s){
+  _inRestore=true;
+  const d=JSON.parse(s),layout=getLayout();
+  PLACED.length=0;
+  (d.placed||[]).forEach(p=>{
+    const comp=COMPS.find(c=>c.id===p.id);if(!comp)return;
+    const railRef=layout.zones.find(z=>z.label===p.railLabel)||null;
+    PLACED.push({comp,wx:p.wx,wy:p.wy,label:p.label,type:'comp',railRef,band:p.band||null});
+  });
+  DOOR_PLACED.length=0;
+  (d.doorPlaced||[]).forEach(p=>{
+    const comp=COMPS.find(c=>c.id===p.id);if(!comp)return;
+    DOOR_PLACED.push({comp,wx:p.wx,wy:p.wy,label:p.label,type:'comp'});
+  });
+  for(const k in RAIL_OFFSETS)delete RAIL_OFFSETS[k];
+  for(const k in ZONE_DEPTHS)delete ZONE_DEPTHS[k];
+  for(const k in RAIL_FRONT_Z)delete RAIL_FRONT_Z[k];
+  Object.assign(RAIL_OFFSETS,d.railOffsets||{});
+  Object.assign(ZONE_DEPTHS,d.zoneDepths||{});
+  Object.assign(RAIL_FRONT_Z,d.railFrontZ||{});
+  wireCount=d.wireCount||0;peCount=d.peCount||0;voyantCount=d.voyantCount||0;
+  const all=[...PLACED,...DOOR_PLACED];WIRES.length=0;
+  (d.wires||[]).forEach(w=>{
+    const startP=all.find(p=>p.label===w.sLabel)||null;
+    const endP=all.find(p=>p.label===w.eLabel)||null;
+    WIRES.push({id:w.id,section:w.section||2.5,color:w.color||'#C47820',wtype:w.wtype||'H07V-K',
+      startP,startPtId:w.sPtId,endP,endPtId:w.ePtId,pts:w.pts||[],highlighted:false});
+  });
+  selectedComp=null;doorSelected=null;
+  _inRestore=false;
+  draw();updateWT();updateInfo();saveSession();
+}
+
+function undo(){if(historyIdx>0){historyIdx--;_applyState(HISTORY[historyIdx]);}}
+function redo(){if(historyIdx<HISTORY.length-1){historyIdx++;_applyState(HISTORY[historyIdx]);}}
+
+// ═══════════════════════════════════════════════════════════════════════
 // SAUVEGARDE SESSION (localStorage)
 // ═══════════════════════════════════════════════════════════════════════
 let _saveTmr=null;
-function schedSave(){clearTimeout(_saveTmr);_saveTmr=setTimeout(saveSession,800);}
+function schedSave(){snapshot();clearTimeout(_saveTmr);_saveTmr=setTimeout(saveSession,800);}
 
 function saveSession(){
   try{

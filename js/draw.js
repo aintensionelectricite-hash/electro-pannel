@@ -229,6 +229,7 @@ function draw(){
   drawPlateView('top',layout);
   drawPlateView('bot',layout);
   if(doorVisible)drawDoorView(layout);
+  if(currentView==='iso')drawIsoView(layout);
 
   // ── Panneau voyants porte (à droite de la vue face)
   if(doorVisible&&DOOR_PLACED.length){
@@ -619,4 +620,164 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
     COTE_HITS.push({x:cx,y:cy,r:16,val:espR,min:0,max:50,
       onSubmit:v=>{const el=document.getElementById('esp-r');el.value=v;el.dispatchEvent(new Event('input'));}});
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// VUE 3D ISOMÉTRIQUE — projection oblique cabinet
+// ═══════════════════════════════════════════════════════════════════════
+function drawIsoView(layout){
+  const cv=document.getElementById('cv-iso');
+  if(!cv||cv.style.display==='none')return;
+  const{m,w,h,intX,intW,zones}=layout;
+  const thick=THK();
+  const sc=getSc()*.9;               // échelle sans zoom (vue fixe)
+  const dA=Math.PI/6;               // angle 30° pour profondeur
+  const dF=0.45;                    // facteur raccourcissement profondeur
+  const OX=Math.round(thick*dF*Math.cos(dA)*sc)+50;
+  const OY=20;
+  const CW=Math.round(w*sc)+OX+40;
+  const CH=Math.round(h*sc)+Math.round(thick*dF*Math.sin(dA)*sc)+OY+30;
+  cv.width=CW;cv.height=CH;cv.style.width=CW+'px';cv.style.height=CH+'px';
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,CW,CH);
+
+  // Projection (x=largeur, y=hauteur, z=profondeur depuis avant)
+  function proj(x,y,z){
+    return[
+      OX+x*sc+z*sc*dF*Math.cos(dA),
+      OY+y*sc-z*sc*dF*Math.sin(dA)
+    ];
+  }
+  function projPt(x,y,z){const[px,py]=proj(x,y,z);return{x:px,y:py};}
+
+  // Helper : polygone 4 points
+  function poly4(pts,fill,stroke,lw){
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||.7;ctx.stroke();}
+  }
+
+  // ── Face arrière (mat ABS)
+  poly4([projPt(0,0,thick),projPt(w,0,thick),projPt(w,h,thick),projPt(0,h,thick)],
+    '#A8B8C8','#5870A0',1);
+
+  // ── Face haute (top)
+  const tg=ctx.createLinearGradient(...Object.values(projPt(0,0,0)),
+    ...Object.values(projPt(0,0,thick)));
+  tg.addColorStop(0,'#C8D8E8');tg.addColorStop(1,'#9AAABB');
+  poly4([projPt(0,0,0),projPt(w,0,0),projPt(w,0,thick),projPt(0,0,thick)],null,'#708098',.8);
+  ctx.fillStyle=tg;ctx.fill();
+
+  // ── Face côté droit
+  const rg=ctx.createLinearGradient(...Object.values(projPt(w,0,0)),
+    ...Object.values(projPt(w,0,thick)));
+  rg.addColorStop(0,'#B0C0D0');rg.addColorStop(1,'#8898A8');
+  poly4([projPt(w,0,0),projPt(w,h,0),projPt(w,h,thick),projPt(w,0,thick)],null,'#708098',.8);
+  ctx.fillStyle=rg;ctx.fill();
+
+  // ── Face avant — fond gradient
+  const fg=ctx.createLinearGradient(...Object.values(projPt(0,0,0)),
+    ...Object.values(projPt(w,h,0)));
+  fg.addColorStop(0,'#E8F2FC');fg.addColorStop(1,'#D2E6F6');
+  const fpts=[projPt(0,0,0),projPt(w,0,0),projPt(w,h,0),projPt(0,h,0)];
+  poly4(fpts,null,'#5B9FD4',1.5);ctx.fillStyle=fg;ctx.fill();
+
+  // ── Bandes tôle haut/bas (presse-étoupes)
+  [[0,m],[h-m,m]].forEach(([by,bh],bi)=>{
+    const grad=ctx.createLinearGradient(...Object.values(projPt(0,by,0)),
+      ...Object.values(projPt(0,by+bh,0)));
+    grad.addColorStop(0,bi===0?'#B8C8D8':'#A8BCC8');
+    grad.addColorStop(1,bi===0?'#A8BCC8':'#98ACBC');
+    poly4([projPt(0,by,0),projPt(w,by,0),projPt(w,by+bh,0),projPt(0,by+bh,0)],null,'#889AAA',.5);
+    ctx.fillStyle=grad;ctx.fill();
+  });
+
+  // ── Goulottes verticales GV1, GV2
+  [[m,VGOUL_W],[w-m-VGOUL_W,VGOUL_W]].forEach(([gx,gw])=>{
+    const goulD=40;
+    poly4([projPt(gx,m,0),projPt(gx+gw,m,0),projPt(gx+gw,h-m,0),projPt(gx,h-m,0)],
+      '#FAECE7','#D85A30',.6);
+    // Profondeur goulotte
+    poly4([projPt(gx,m,0),projPt(gx+gw,m,0),projPt(gx+gw,m,goulD),projPt(gx,m,goulD)],
+      '#E8D8D0','#D85A30',.5);
+  });
+
+  // ── Zones horizontales
+  zones.forEach(z=>{
+    if(z.type==='goulH'){
+      const goulD=getZD(z);
+      // Face avant goulotte
+      poly4([projPt(intX,z.y,0),projPt(intX+intW,z.y,0),projPt(intX+intW,z.y+z.h,0),projPt(intX,z.y+z.h,0)],
+        '#FAECE7','#D85A30',.5);
+      // Dessus goulotte (profondeur)
+      poly4([projPt(intX,z.y,0),projPt(intX+intW,z.y,0),projPt(intX+intW,z.y,goulD),projPt(intX,z.y,goulD)],
+        '#F0D8D0','#D85A30',.4);
+      // Label
+      const[lx,ly]=proj(intX+5,z.y+z.h/2,0);
+      ctx.font='500 '+(Math.max(6,Math.round(z.h*sc*.4)))+'px system-ui';
+      ctx.fillStyle='#A04010';ctx.textAlign='left';ctx.fillText(z.label,lx,ly+3);
+    } else if(z.type==='rail'){
+      const railD=getZD(z);
+      const railFZ=RAIL_FRONT_Z[z.label]!==undefined?RAIL_FRONT_Z[z.label]:Math.round(railD*.25);
+      // Face avant du rail
+      poly4([projPt(intX,z.y,0),projPt(intX+intW,z.y,0),projPt(intX+intW,z.y+z.h,0),projPt(intX,z.y+z.h,0)],
+        '#D8D8D8','#909090',.5);
+      // Rail DIN en 3D (face du rail visible)
+      const rY=z.y+(RAIL_H-z.h)/2+z.h/2-5;
+      poly4([projPt(intX,rY,railFZ),projPt(intX+intW,rY,railFZ),
+             projPt(intX+intW,rY+10,railFZ),projPt(intX,rY+10,railFZ)],
+        '#EEEEEE','#777',.5);
+      // Dessus rail (profondeur)
+      poly4([projPt(intX,z.y,0),projPt(intX+intW,z.y,0),
+             projPt(intX+intW,z.y,railD),projPt(intX,z.y,railD)],
+        '#C8D0D8','#909090',.4);
+      // Composants sur ce rail
+      PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===z.label).forEach(p=>{
+        const c=p.comp;
+        const cz=railFZ+1;
+        // Face avant composant
+        const[cx0,cy0]=proj(p.wx,p.wy,cz);
+        const[cx1,cy1]=proj(p.wx+c.modW,p.wy,cz);
+        const[cx2,cy2]=proj(p.wx+c.modW,p.wy+c.modH,cz);
+        const[cx3,cy3]=proj(p.wx,p.wy+c.modH,cz);
+        ctx.beginPath();ctx.moveTo(cx0,cy0);ctx.lineTo(cx1,cy1);ctx.lineTo(cx2,cy2);ctx.lineTo(cx3,cy3);ctx.closePath();
+        ctx.fillStyle=c.color+'CC';ctx.fill();
+        ctx.strokeStyle=c.color;ctx.lineWidth=.6;ctx.stroke();
+        // Dessus composant
+        const cd=c.modH*.3;
+        const[tx0,ty0]=proj(p.wx,p.wy,cz);
+        const[tx1,ty1]=proj(p.wx+c.modW,p.wy,cz);
+        const[tx2,ty2]=proj(p.wx+c.modW,p.wy,cz+cd);
+        const[tx3,ty3]=proj(p.wx,p.wy,cz+cd);
+        ctx.beginPath();ctx.moveTo(tx0,ty0);ctx.lineTo(tx1,ty1);ctx.lineTo(tx2,ty2);ctx.lineTo(tx3,ty3);ctx.closePath();
+        const tg2=ctx.createLinearGradient(tx0,ty0,tx2,ty2);
+        tg2.addColorStop(0,c.color+'99');tg2.addColorStop(1,c.color+'44');
+        ctx.fillStyle=tg2;ctx.fill();ctx.strokeStyle=c.color+'88';ctx.lineWidth=.4;ctx.stroke();
+        // Label
+        if(c.modW*sc>14){
+          const[lx,ly]=proj(p.wx+c.modW/2,p.wy+c.modH*.7,cz);
+          ctx.font='bold '+(Math.max(5,Math.round(c.modW*sc*.1)))+'px system-ui';
+          ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(p.label||c.name.slice(0,4),lx,ly+2);
+        }
+      });
+    }
+  });
+
+  // ── Contour face avant
+  ctx.beginPath();ctx.moveTo(fpts[0].x,fpts[0].y);
+  fpts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();
+  ctx.strokeStyle='#5B9FD4';ctx.lineWidth=1.5;ctx.stroke();
+
+  // ── Arêtes 3D
+  [[projPt(0,0,0),projPt(0,0,thick)],[projPt(w,0,0),projPt(w,0,thick)],
+   [projPt(0,h,0),projPt(0,h,thick)],[projPt(w,h,0),projPt(w,h,thick)]].forEach(([a,b])=>{
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle='rgba(80,90,110,.5)';ctx.lineWidth=1;ctx.stroke();
+  });
+
+  // ── Titre
+  ctx.font='bold 9px system-ui';ctx.fillStyle='#5870A0';ctx.textAlign='left';
+  ctx.fillText(`Vue 3D — ${w}×${h}mm ép.${thick}mm`,OX,CH-8);
 }
