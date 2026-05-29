@@ -75,10 +75,13 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
 <div id="app">
 <div class="hdr">
   <h1>CAO Armoire Électrique — Spacial S3D</h1>
+  <div style="display:flex;gap:10px;align-items:center">
+  <span id="_save_lbl" style="font-size:9px;color:#AAA"></span>
   <div style="display:flex;gap:6px;font-size:9.5px;color:#888;align-items:center">
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FAECE7;border:1px solid #D85A30"></span>Goulotte</span>
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E8E8E8;border:1px solid #909090"></span>Rail DIN</span>
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#606060;border:1px solid #404040"></span>Presse-étoupe</span>
+  </div>
   </div>
 </div>
 <div id="tb">
@@ -112,6 +115,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   <label title="Longueur câble joint de porte pour voyants">Joint porte <input type="number" id="door-gap" value="500" min="100" max="3000" class="n48"> mm</label>
   <div class="sep"></div>
   <button class="tbtn red" onclick="clearAll()">Vider</button>
+  <button class="tbtn" onclick="if(confirm('Effacer la session sauvegardée ?')){localStorage.removeItem(\'ep_v2\');location.reload();}">↺ Session</button>
   <button class="tbtn" onclick="exportHTML()">HTML</button>
 </div>
 <div id="view-tabs">
@@ -325,7 +329,7 @@ function togDoor(){
 function clearAll(){
   if(!confirm('Vider tout ?'))return;
   PLACED.length=0;DOOR_PLACED.length=0;WIRES.length=0;
-  wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;draw();updateWT();updateInfo();
+  wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;draw();updateWT();updateInfo();schedSave();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1627,7 +1631,7 @@ function startLibDrag(e,comp){
       }
     }
     libGhost=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
-    draw();updateWT();
+    draw();updateWT();schedSave();
   }
   document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
 }
@@ -1728,7 +1732,7 @@ function setupFaceCanvas(){
         const pts=routeWireStrict([sp.wx,sp.wy],[nearest.pt.wx,nearest.pt.wy],wm.startP,nearest.placed,layout,wm.startPtId,nearest.pt.id);
         wireCount++;
         WIRES.push({id:`W${wireCount}`,section:sec,startP:wm.startP,startPtId:wm.startPtId,endP:nearest.placed,endPtId:nearest.pt.id,pts,highlighted:false});
-        wm.startP=null;wm.startPtId=null;draw();updateWT();
+        wm.startP=null;wm.startPtId=null;draw();updateWT();schedSave();
       }
       return;
     }
@@ -1775,7 +1779,7 @@ function setupFaceCanvas(){
       });
       draw();
     }
-    function onUp(){PLACED.splice(idx,0,hit);dragging=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();updateWT();}
+    function onUp(){PLACED.splice(idx,0,hit);dragging=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();updateWT();schedSave();}
     document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
   });
   document.addEventListener('mouseup',()=>{if(cutDragging){cutDragging=false;draw();}});
@@ -1831,7 +1835,7 @@ function setupFaceCanvas(){
     if(idx>=0&&confirm('Supprimer ce composant ?')){
       const rm=PLACED[idx];PLACED.splice(idx,1);
       for(let i=WIRES.length-1;i>=0;i--){if(WIRES[i].startP===rm||WIRES[i].endP===rm)WIRES.splice(i,1);}
-      if(selectedComp===rm)selectedComp=null;draw();updateWT();updateInfo();
+      if(selectedComp===rm)selectedComp=null;draw();updateWT();updateInfo();schedSave();
     }
   });
 }
@@ -1970,18 +1974,100 @@ document.addEventListener('keydown',e=>{
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// SAUVEGARDE SESSION (localStorage)
+// ═══════════════════════════════════════════════════════════════════════
+let _saveTmr=null;
+function schedSave(){clearTimeout(_saveTmr);_saveTmr=setTimeout(saveSession,800);}
+
+function saveSession(){
+  try{
+    const data={
+      v:2,ts:Date.now(),
+      model:document.getElementById('sel-model').value,
+      nbApp:document.getElementById('nb-app').value,
+      nbBorn:document.getElementById('nb-born').value,
+      ghH:document.getElementById('gh-h').value,
+      espR:document.getElementById('esp-r').value,
+      thickness:document.getElementById('thickness').value,
+      doorGap:document.getElementById('door-gap')?.value||500,
+      doorVisible,cutLineY,cutDir,wireCount,peCount,voyantCount,
+      railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
+      placed:PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label,railLabel:p.railRef?.label||null,band:p.band||null})),
+      doorPlaced:DOOR_PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label})),
+      wires:WIRES.map(w=>({id:w.id,section:w.section,color:w.color,wtype:w.wtype,
+        sLabel:w.startP?.label||null,sPtId:w.startPtId,eLabel:w.endP?.label||null,ePtId:w.endPtId,pts:w.pts}))
+    };
+    localStorage.setItem('ep_v2',JSON.stringify(data));
+    const el=document.getElementById('_save_lbl');
+    if(el){el.textContent='💾 '+new Date().toLocaleTimeString('fr');el.style.color='#1D9E75';}
+  }catch(e){}
+}
+
+function loadSession(){
+  try{
+    const raw=localStorage.getItem('ep_v2');if(!raw)return false;
+    const d=JSON.parse(raw);if(!d||d.v!==2)return false;
+    ['sel-model','nb-app','nb-born','gh-h','esp-r','thickness'].forEach(id=>{
+      if(d[{sel:'model','nb-app':'nbApp','nb-born':'nbBorn','gh-h':'ghH','esp-r':'espR',thickness:'thickness'}[id]||id.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]!==undefined)
+        document.getElementById(id).value=d[id.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())];
+    });
+    // plus simple :
+    if(d.model)document.getElementById('sel-model').value=d.model;
+    if(d.nbApp)document.getElementById('nb-app').value=d.nbApp;
+    if(d.nbBorn)document.getElementById('nb-born').value=d.nbBorn;
+    if(d.ghH)document.getElementById('gh-h').value=d.ghH;
+    if(d.espR)document.getElementById('esp-r').value=d.espR;
+    if(d.thickness)document.getElementById('thickness').value=d.thickness;
+    if(d.doorGap&&document.getElementById('door-gap'))document.getElementById('door-gap').value=d.doorGap;
+    Object.assign(RAIL_OFFSETS,d.railOffsets||{});Object.assign(ZONE_DEPTHS,d.zoneDepths||{});Object.assign(RAIL_FRONT_Z,d.railFrontZ||{});
+    cutLineY=d.cutLineY??null;cutDir=d.cutDir??1;
+    wireCount=d.wireCount||0;peCount=d.peCount||0;voyantCount=d.voyantCount||0;
+    if(d.doorVisible){doorVisible=true;document.getElementById('btn-door').classList.add('door-on');}
+    // Restituer composants
+    const layout=getLayout();
+    PLACED.length=0;
+    (d.placed||[]).forEach(p=>{
+      const comp=COMPS.find(c=>c.id===p.id);if(!comp)return;
+      const railRef=layout.zones.find(z=>z.label===p.railLabel)||null;
+      PLACED.push({comp,wx:p.wx,wy:p.wy,label:p.label,type:'comp',railRef,band:p.band||null});
+    });
+    DOOR_PLACED.length=0;
+    (d.doorPlaced||[]).forEach(p=>{
+      const comp=COMPS.find(c=>c.id===p.id);if(!comp)return;
+      DOOR_PLACED.push({comp,wx:p.wx,wy:p.wy,label:p.label,type:'comp'});
+    });
+    // Restituer fils (reconnexion par label)
+    const allPlaced=[...PLACED,...DOOR_PLACED];
+    WIRES.length=0;
+    (d.wires||[]).forEach(w=>{
+      const startP=allPlaced.find(p=>p.label===w.sLabel)||null;
+      const endP=allPlaced.find(p=>p.label===w.eLabel)||null;
+      WIRES.push({id:w.id,section:w.section||2.5,color:w.color||'#C47820',wtype:w.wtype||'H07V-K',
+        startP,startPtId:w.sPtId,endP,endPtId:w.ePtId,pts:w.pts||[],highlighted:false});
+    });
+    return true;
+  }catch(e){console.warn('loadSession:',e);return false;}
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
-['sel-model','nb-app','nb-born','gh-h','esp-r','thickness','sel-fil'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('input',()=>draw());
+['sel-model','nb-app','nb-born','gh-h','esp-r','thickness','sel-fil','door-gap'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',()=>{draw();schedSave();});
 });
 buildLib();
 setupFaceCanvas();
 setupPlanCanvas();
 setupDoorCanvas();
+// Charger session sauvegardée
+const _restored=loadSession();
 draw();
 updateWT();
 updateInfo();
+if(_restored){
+  const el=document.getElementById('_save_lbl');
+  if(el){el.textContent='Session restaurée';el.style.color='#185FA5';}
+}
 </script>
 </body>
 </html>
