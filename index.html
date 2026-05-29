@@ -81,6 +81,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   <h1>CAO Armoire Électrique — Spacial S3D</h1>
   <div style="display:flex;gap:10px;align-items:center">
   <span id="_save_lbl" style="font-size:9px;color:#AAA"></span>
+  <span id="_zoom_lbl" style="font-size:9px;color:#AAA;cursor:pointer" title="Ctrl+0 = réinitialiser zoom" onclick="faceZoom=1;document.getElementById('_zoom_lbl').textContent='100%';draw()">100%</span>
   <div style="display:flex;gap:6px;font-size:9.5px;color:#888;align-items:center">
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FAECE7;border:1px solid #D85A30"></span>Goulotte</span>
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E8E8E8;border:1px solid #909090"></span>Rail DIN</span>
@@ -122,12 +123,23 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   <button class="tbtn" onclick="if(confirm('Effacer la session sauvegardée ?')){localStorage.removeItem(\'ep_v2\');location.reload();}">↺ Session</button>
   <button class="tbtn" onclick="exportHTML()">HTML</button>
 </div>
-<div id="view-tabs">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding:2px 0;gap:8px">
+<div id="view-tabs" style="display:flex;gap:4px">
   <button class="vtab on" data-view="all" onclick="setView('all')">Toutes</button>
   <button class="vtab" data-view="face" onclick="setView('face')">Vue face</button>
   <button class="vtab" data-view="plan" onclick="setView('plan')">Coupe A-A</button>
   <button class="vtab" data-view="plaques" onclick="setView('plaques')">Plaques PE</button>
   <button class="vtab" data-view="porte" onclick="setView('porte')">Porte</button>
+</div>
+<div id="zoom-bar" style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+  <button class="tbtn" style="padding:2px 7px;font-size:13px;line-height:1" onclick="setZoom(faceZoom/1.18)" title="Dézoomer (Ctrl+-)">−</button>
+  <input type="range" id="zoom-slider" min="25" max="200" value="100" step="5"
+    style="width:90px;cursor:pointer;accent-color:#185FA5"
+    oninput="setZoom(this.value/100)">
+  <button class="tbtn" style="padding:2px 7px;font-size:13px;line-height:1" onclick="setZoom(faceZoom*1.18)" title="Zoomer (Ctrl+=)">+</button>
+  <span id="zoom-pct" style="font-size:10px;font-weight:600;color:#185FA5;min-width:34px;text-align:right">100%</span>
+  <button class="tbtn" style="padding:2px 8px;font-size:10px" onclick="setZoom(1)" title="Réinitialiser zoom (Ctrl+0)">Ajuster</button>
+</div>
 </div>
 <div id="main">
   <div id="lib">
@@ -230,6 +242,7 @@ const PLACED=[];       // composants sur le fond
 const DOOR_PLACED=[];  // composants sur la porte
 const WIRES=[];
 let wireCount=0,peCount=0,voyantCount=0;
+let faceZoom=1.0;            // zoom vue face (molette souris)
 let cutLineY=null,cutDir=1;  // cutDir +1=vers droite, -1=vers gauche
 let cutDragging=false;
 let hoveredComp=null,selectedComp=null,clipboard=null;
@@ -260,6 +273,16 @@ function THK() {return Math.max(60,+document.getElementById('thickness').value||
 function SEC() {return parseFloat(document.getElementById('sel-fil').value)||2.5}
 
 function tog(k){FLAGS[k]=!FLAGS[k];document.getElementById('btn-'+k).classList.toggle('on',FLAGS[k]);draw()}
+
+// Zoom centralisé — met à jour le slider, le % et la vue
+function setZoom(z){
+  faceZoom=Math.max(0.25,Math.min(4,+z||1));
+  const pct=Math.round(faceZoom*100);
+  const sl=document.getElementById('zoom-slider');if(sl)sl.value=Math.min(200,Math.max(25,pct));
+  const lbl=document.getElementById('zoom-pct');if(lbl)lbl.textContent=pct+'%';
+  const hdr=document.getElementById('_zoom_lbl');if(hdr)hdr.textContent=pct+'%';
+  draw();
+}
 // ── Onglets de vues
 let currentView='all';
 function setView(v){
@@ -409,8 +432,8 @@ function getZD(zone){return ZONE_DEPTHS[zone.label]!==undefined?ZONE_DEPTHS[zone
 // COORDONNÉES
 // ═══════════════════════════════════════════════════════════════════════
 function getSc(){const{w,h}=MODELS[document.getElementById('sel-model').value];return Math.min(360/w,640/h,.66)}
-function W2F(wx,wy){const sc=getSc();return[58+wx*sc,34+wy*sc]}
-function F2W(px,py){const sc=getSc();return[(px-58)/sc,(py-34)/sc]}
+function W2F(wx,wy){const sc=getSc()*faceZoom;return[58+wx*sc,34+wy*sc]}
+function F2W(px,py){const sc=getSc()*faceZoom;return[(px-58)/sc,(py-34)/sc]}
 function wireR(sec){const m={1.5:1.4,2.5:1.8,6:2.8,10:3.6,16:4.5};return(m[String(sec)]||2)/2}
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -684,7 +707,7 @@ function drawPosCotes(ctx,sx,sy,sw,p,layout,sc){
 function draw(){
   const layout=getLayout();
   const{intX,intW,zones,m,w,h}=layout;
-  const sc=getSc();
+  const sc=getSc()*faceZoom;  // échelle avec zoom appliqué
   const DOOR_PANEL_W=doorVisible&&DOOR_PLACED.length?80:0;
   const FW=Math.round(w*sc)+130+(DOOR_PANEL_W?DOOR_PANEL_W+24:0),FH=Math.round(h*sc)+100;
   const cv=document.getElementById('cv-face');
@@ -1627,6 +1650,15 @@ function updateWT(){
     tr.addEventListener('click',()=>{WIRES.forEach(w2=>w2.highlighted=false);wire.highlighted=true;draw();updateWT();});
     tbody.appendChild(tr);
   });
+  // Barre de totaux en bas du tableau
+  const totalL=WIRES.reduce((s,w)=>s+wireSplineLength(w),0);
+  let foot=document.getElementById('_wt_foot');
+  if(!foot){
+    foot=document.createElement('div');foot.id='_wt_foot';
+    foot.style.cssText='font-size:9px;color:#888;padding:3px 6px;border-top:.5px solid #E0DEDB;background:#F8F7F4;flex-shrink:0';
+    document.getElementById('wp').appendChild(foot);
+  }
+  foot.textContent=`${WIRES.length} fil${WIRES.length>1?'s':''} · ${(totalL/1000).toFixed(1)} m total`;
 }
 
 function exportCSV(){
@@ -1640,9 +1672,32 @@ function exportCSV(){
 }
 
 function exportHTML(){
+  // Construire l'état session à embarquer
+  const allPlaced=[...PLACED,...DOOR_PLACED];
+  const state={
+    v:2,ts:Date.now(),
+    model:document.getElementById('sel-model').value,
+    nbApp:document.getElementById('nb-app').value,
+    nbBorn:document.getElementById('nb-born').value,
+    ghH:document.getElementById('gh-h').value,
+    espR:document.getElementById('esp-r').value,
+    thickness:document.getElementById('thickness').value,
+    doorGap:document.getElementById('door-gap')?.value||500,
+    doorVisible,cutLineY,cutDir,wireCount,peCount,voyantCount,
+    railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
+    placed:PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label,railLabel:p.railRef?.label||null,band:p.band||null})),
+    doorPlaced:DOOR_PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label})),
+    wires:WIRES.map(w=>({id:w.id,section:w.section,color:w.color,wtype:w.wtype,
+      sLabel:w.startP?.label||null,sPtId:w.startPtId,eLabel:w.endP?.label||null,ePtId:w.endPtId,pts:w.pts}))
+  };
+  // Injecter la session comme script inline dans le HTML exporté
+  const injectScript=`<script>/* EP session embedded */try{localStorage.setItem('ep_v2',${JSON.stringify(JSON.stringify(state))});}catch(e){}<\/script>`;
+  let html=document.documentElement.outerHTML;
+  html=html.replace('</body>',injectScript+'\n</body>');
+  const date=new Date().toISOString().slice(0,10);
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([document.documentElement.outerHTML],{type:'text/html'}));
-  a.download='cao-armoire.html';a.click();
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+  a.download=`cao-armoire-${date}.html`;a.click();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1751,6 +1806,11 @@ function setupFaceCanvas(){
     if(oldH!==hoveredComp||(wm.active&&wm.startP))draw();else drawPlanView(getLayout());
   });
   cv.addEventListener('mouseleave',()=>{faceCursorWX=null;hoveredComp=null;drawPlanView(getLayout());});
+  // ── Zoom molette souris
+  cv.addEventListener('wheel',e=>{
+    e.preventDefault();
+    setZoom(faceZoom*(e.deltaY<0?1.12:1/1.12));
+  },{passive:false});
   cv.addEventListener('mousedown',e=>{
     if(e.button!==0)return;
     const r=cv.getBoundingClientRect();
@@ -2049,6 +2109,12 @@ function setupDoorCanvas(){
 // ═══════════════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
+  // Zoom clavier Ctrl+0 (reset), Ctrl+= (in), Ctrl+- (out)
+  if(e.ctrlKey&&(e.key==='0'||e.key==='Numpad0')){e.preventDefault();setZoom(1);return;}
+  if(e.ctrlKey&&(e.key==='='||e.key==='+')){e.preventDefault();setZoom(faceZoom*1.18);return;}
+  if(e.ctrlKey&&e.key==='-'){e.preventDefault();setZoom(faceZoom/1.18);return;}
+  // Raccourci W → mode fil
+  if(e.key==='w'&&!e.ctrlKey&&document.activeElement===document.body){togWire();return;}
   if(e.ctrlKey&&e.key.toLowerCase()==='c'&&selectedComp)clipboard={comp:selectedComp.comp,label:selectedComp.label};
   if(e.ctrlKey&&e.key.toLowerCase()==='v'&&clipboard){
     const layout=getLayout();
