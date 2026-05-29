@@ -45,7 +45,10 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
 #wt-wrap{flex:1;overflow-y:auto}
 #wt{width:100%;border-collapse:collapse;font-size:10px}
 #wt th{background:#F4F3F0;color:#777;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.03em;padding:3px 4px;text-align:left;border-bottom:.5px solid #E0DEDB;position:sticky;top:0;white-space:nowrap}
-#wt td{padding:3px 4px;border-bottom:.5px solid #F0EFEB;color:#333;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wt td{padding:2px 3px;border-bottom:.5px solid #F0EFEB;color:#333;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wt td.editable{cursor:pointer}#wt td.editable:hover{background:#EBF3FF}
+#wt td select,#wt td input[type=color]{font-size:9px;border:none;background:transparent;cursor:pointer;padding:0}
+.wclr{display:inline-block;width:14px;height:14px;border-radius:3px;border:.5px solid #999;cursor:pointer;vertical-align:middle}
 #wt tr.hl td{background:#FFF5E0;color:#7A4800}
 #wt tr:hover td{background:#F8F7F4;cursor:pointer}
 .wlabel{font-weight:700;color:#185FA5}
@@ -106,6 +109,8 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   <div class="sep"></div>
   <button class="tbtn" id="btn-door" onclick="togDoor()">🚪 Porte</button>
   <div class="sep"></div>
+  <label title="Longueur câble joint de porte pour voyants">Joint porte <input type="number" id="door-gap" value="500" min="100" max="3000" class="n48"> mm</label>
+  <div class="sep"></div>
   <button class="tbtn red" onclick="clearAll()">Vider</button>
   <button class="tbtn" onclick="exportHTML()">HTML</button>
 </div>
@@ -134,7 +139,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
       <button class="wp-btn" onclick="exportCSV()">⬇ CSV</button>
     </div>
     <div id="wt-wrap"><table id="wt">
-      <thead><tr><th>Rep.</th><th>mm²</th><th>De</th><th>Vers</th><th>PE</th><th>L mm</th></tr></thead>
+      <thead><tr><th>Rep.</th><th>Clr</th><th>Type</th><th>mm²</th><th>De</th><th>Vers</th><th>L mm</th></tr></thead>
       <tbody id="wt-body"></tbody>
     </table></div>
   </div>
@@ -378,14 +383,18 @@ function getConnPts(p){
     return[{id:'left',wx:p.wx,wy:p.wy+ch/2},{id:'right',wx:p.wx+cw,wy:p.wy+ch/2}];
   if(c.type==='petoupe')
     return[{id:'inner',wx:p.wx+cw/2,wy:p.wy+ch*(p.band==='top'?1:0)}];
-  if(c.type==='voyant')
+  if(c.type==='voyant'){
+    // Si le voyant a une position face (panneau porte à droite), utiliser celle-là
+    if(p._faceWX!==undefined)return[{id:'face',wx:p._faceWX,wy:p._faceWY}];
     return[{id:'bot',wx:p.wx+cw/2,wy:p.wy+ch}];
+  }
   return[];
 }
 
 function nearestConnPt(wx,wy,excludeP,collectionOverride){
-  const th=14;let best=null,bd=Infinity;
-  (collectionOverride||PLACED).forEach(p=>{
+  const th=18;let best=null,bd=Infinity;
+  const coll=collectionOverride||[...PLACED,...(doorVisible?DOOR_PLACED:[])];
+  coll.forEach(p=>{
     if(p===excludeP)return;
     getConnPts(p).forEach(pt=>{
       const d=Math.hypot(wx-pt.wx,wy-pt.wy);
@@ -534,8 +543,8 @@ function drawSpline(ctx,wpts,minR,sc){
   if(pts.length===2){
     ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);ctx.lineTo(pts[1][0],pts[1][1]);return;
   }
-  // Tension : fraction du rayon de cintrage physique convertie en tension Catmull-Rom
-  const tension=Math.min(0.45,Math.max(0.2,(minR*sc)/80));
+  // Tension Catmull-Rom fixe 0.42 — courbe douce standard, sans angles vifs
+  const tension=0.42;
   ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
   for(let i=0;i<pts.length-1;i++){
     const p0=pts[Math.max(i-1,0)];
@@ -629,7 +638,8 @@ function draw(){
   const layout=getLayout();
   const{intX,intW,zones,m,w,h}=layout;
   const sc=getSc();
-  const FW=Math.round(w*sc)+130,FH=Math.round(h*sc)+100;
+  const DOOR_PANEL_W=doorVisible&&DOOR_PLACED.length?80:0;
+  const FW=Math.round(w*sc)+130+(DOOR_PANEL_W?DOOR_PANEL_W+24:0),FH=Math.round(h*sc)+100;
   const cv=document.getElementById('cv-face');
   cv.width=FW;cv.height=FH;cv.style.width=FW+'px';cv.style.height=FH+'px';
   const ctx=cv.getContext('2d');
@@ -742,6 +752,44 @@ function draw(){
   drawPlateView('top',layout);
   drawPlateView('bot',layout);
   if(doorVisible)drawDoorView(layout);
+
+  // ── Panneau voyants porte (à droite de la vue face)
+  if(doorVisible&&DOOR_PLACED.length){
+    const dpX=sx(w)+36,dpW=DOOR_PANEL_W;
+    ctx.fillStyle='#C8D8E8';ctx.strokeStyle='#6080A0';ctx.lineWidth=1;
+    rr(ctx,dpX,sy(0),dpW,sw(h),6);ctx.fill();ctx.stroke();
+    ctx.font='bold 8px system-ui';ctx.fillStyle='#4060A0';ctx.textAlign='center';
+    ctx.fillText('PORTE',dpX+dpW/2,sy(0)-6);
+    // Trait pointillé joint
+    ctx.strokeStyle='rgba(80,80,200,.35)';ctx.lineWidth=.8;ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(sx(w)+2,sy(h*.5));ctx.lineTo(dpX,sy(h*.5));ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font='7px system-ui';ctx.fillStyle='rgba(80,80,200,.6)';
+    ctx.fillText(`joint ${DOOR_GAP()}mm`,sx(w)+18,sy(h*.5)-5);
+    // Dessiner voyants avec point de connexion
+    DOOR_PLACED.forEach((p,pi)=>{
+      const c=p.comp;
+      const vcx=dpX+dpW/2;
+      const vcy=sy(m+((h-2*m)/(DOOR_PLACED.length+1))*(pi+1));
+      const r=Math.max(8,Math.min(14,dpW*.18));
+      const rg=ctx.createRadialGradient(vcx-r*.25,vcy-r*.25,r*.05,vcx,vcy,r);
+      rg.addColorStop(0,c.color+'FF');rg.addColorStop(1,c.color+'88');
+      ctx.fillStyle=rg;ctx.beginPath();ctx.arc(vcx,vcy,r,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.beginPath();ctx.arc(vcx,vcy,r,0,Math.PI*2);ctx.stroke();
+      // Reflet
+      ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.arc(vcx-r*.28,vcy-r*.28,r*.32,0,Math.PI*2);ctx.fill();
+      // Label
+      const fs=Math.max(6,Math.round(r*.42));
+      ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
+      ctx.fillText(p.label||'V?',vcx,vcy+fs*.35);
+      // Point de connexion (gauche du panneau)
+      const connX=dpX-2;
+      ctx.fillStyle='rgba(255,140,0,.8)';ctx.strokeStyle='#fff';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(connX,vcy,4,0,Math.PI*2);ctx.fill();ctx.stroke();
+      // Stocker la position monde de ce voyant pour le câblage
+      p._faceWX=(connX-58)/sc;p._faceWY=(vcy-34)/sc;
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1213,10 +1261,13 @@ function drawWire(ctx,wire,sc,layout){
   if(!wire.pts||wire.pts.length<2)return;
   const sec=wire.section,minR=BEND_R[sec]||20;
   const lw=Math.max(1.2,wireR(sec)*sc*2),hl=wire.highlighted;
-  ctx.strokeStyle=hl?'rgba(220,120,0,.9)':'rgba(80,35,0,.45)';
-  ctx.lineWidth=lw+2;ctx.lineCap='round';ctx.lineJoin='round';
+  const wCol=wire.color||'#C47820';
+  // Ombre/halo
+  ctx.strokeStyle=hl?'rgba(220,120,0,.85)':wCol+'55';
+  ctx.lineWidth=lw+2.5;ctx.lineCap='round';ctx.lineJoin='round';
   drawSpline(ctx,wire.pts,minR,sc);ctx.stroke();
-  ctx.strokeStyle=hl?'#FF9500':'#C47820';ctx.lineWidth=lw;
+  // Fil couleur réelle
+  ctx.strokeStyle=hl?'#FF9500':wCol;ctx.lineWidth=lw;
   drawSpline(ctx,wire.pts,minR,sc);ctx.stroke();
   ctx.lineCap='butt';
   // Points départ/arrivée
@@ -1406,25 +1457,88 @@ function drawCotes(ctx,sx,sy,sw,w,h,m,intX,intW,zones,sc,espR){
 // ═══════════════════════════════════════════════════════════════════════
 // TABLEAU FILERIE
 // ═══════════════════════════════════════════════════════════════════════
+const WIRE_TYPES=['H07V-K','H07V-R','H07Z1-K','LIYY','NYY','SYT','XVB'];
+const DOOR_GAP=()=>Math.max(100,+document.getElementById('door-gap')?.value||500);
+
+// Longueur réelle de la spline Catmull-Rom (en mm)
+function wireSplineLength(wire){
+  if(!wire?.pts||wire.pts.length<2)return 0;
+  const pts=wire.pts;
+  if(pts.length===2)return Math.round(Math.hypot(pts[1][0]-pts[0][0],pts[1][1]-pts[0][1]));
+  const T=0.42,S=10;let total=0;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
+    const cp1x=p1[0]+(p2[0]-p0[0])*T,cp1y=p1[1]+(p2[1]-p0[1])*T;
+    const cp2x=p2[0]-(p3[0]-p1[0])*T,cp2y=p2[1]-(p3[1]-p1[1])*T;
+    let px=p1[0],py=p1[1];
+    for(let s=1;s<=S;s++){
+      const t=s/S,mt=1-t;
+      const bx=mt*mt*mt*p1[0]+3*mt*mt*t*cp1x+3*mt*t*t*cp2x+t*t*t*p2[0];
+      const by=mt*mt*mt*p1[1]+3*mt*mt*t*cp1y+3*mt*t*t*cp2y+t*t*t*p2[1];
+      total+=Math.hypot(bx-px,by-py);px=bx;py=by;
+    }
+  }
+  // Ajouter joint de porte si voyant connecté
+  const hasVoyant=wire.endP?.comp?.type==='voyant'||wire.startP?.comp?.type==='voyant';
+  return Math.round(total)+(hasVoyant?DOOR_GAP():0);
+}
+
 function updateWT(){
   const tbody=document.getElementById('wt-body');tbody.innerHTML='';
   WIRES.forEach(wire=>{
+    if(!wire.color)wire.color='#C47820';
+    if(!wire.wtype)wire.wtype='H07V-K';
     const tr=document.createElement('tr');
     if(wire.highlighted)tr.classList.add('hl');
     const de=wire.startP?.label||'—',vers=wire.endP?.label||'—';
-    const pe=wire.startP?.comp?.type==='petoupe'?wire.startP.label:
-             wire.endP?.comp?.type==='petoupe'?wire.endP.label:'';
-    tr.innerHTML=`<td class="wlabel">${wire.id}</td><td>${wire.section}</td><td title="${de}">${de}</td><td title="${vers}">${vers}</td><td>${pe}</td><td>${wireLength(wire.pts)}</td>`;
+    const L=wireSplineLength(wire);
+
+    // Repère
+    const tdId=document.createElement('td');tdId.className='wlabel';tdId.textContent=wire.id;tr.appendChild(tdId);
+
+    // Couleur
+    const tdClr=document.createElement('td');
+    const swatch=document.createElement('span');swatch.className='wclr';
+    swatch.style.background=wire.color;swatch.title='Changer couleur';
+    const colInp=document.createElement('input');colInp.type='color';colInp.value=wire.color;
+    colInp.style.cssText='position:absolute;opacity:0;width:1px;height:1px;pointer-events:none';
+    swatch.addEventListener('click',e=>{e.stopPropagation();colInp.click();});
+    colInp.addEventListener('input',()=>{wire.color=colInp.value;swatch.style.background=wire.color;draw();});
+    tdClr.appendChild(swatch);tdClr.appendChild(colInp);tr.appendChild(tdClr);
+
+    // Type fil
+    const tdType=document.createElement('td');tdType.className='editable';
+    const selType=document.createElement('select');selType.style.cssText='font-size:9px;border:none;background:transparent;max-width:58px';
+    WIRE_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===wire.wtype)o.selected=true;selType.appendChild(o);});
+    selType.addEventListener('change',()=>{wire.wtype=selType.value;});
+    tdType.appendChild(selType);tr.appendChild(tdType);
+
+    // Section mm²
+    const tdSec=document.createElement('td');tdSec.className='editable';
+    const selSec=document.createElement('select');selSec.style.cssText='font-size:9px;border:none;background:transparent;max-width:36px';
+    ['1.5','2.5','6','10','16'].forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;if(s===String(wire.section))o.selected=true;selSec.appendChild(o);});
+    selSec.addEventListener('change',()=>{wire.section=parseFloat(selSec.value);draw();});
+    tdSec.appendChild(selSec);tr.appendChild(tdSec);
+
+    // De / Vers
+    const tdDe=document.createElement('td');tdDe.textContent=de;tdDe.title=de;tr.appendChild(tdDe);
+    const tdVers=document.createElement('td');tdVers.textContent=vers;tdVers.title=vers;tr.appendChild(tdVers);
+
+    // Longueur spline
+    const tdL=document.createElement('td');
+    tdL.textContent=L;
+    if(wire.endP?.comp?.type==='voyant'||wire.startP?.comp?.type==='voyant')tdL.title=`+${DOOR_GAP()}mm joint porte`;
+    tr.appendChild(tdL);
+
     tr.addEventListener('click',()=>{WIRES.forEach(w2=>w2.highlighted=false);wire.highlighted=true;draw();updateWT();});
     tbody.appendChild(tr);
   });
 }
 
 function exportCSV(){
-  const rows=[['Repère','Section (mm²)','De','Vers','Presse-étoupe','Longueur (mm)']];
+  const rows=[['Repère','Type','Section (mm²)','Couleur','De','Vers','Longueur (mm)']];
   WIRES.forEach(w=>{
-    const pe=w.startP?.comp?.type==='petoupe'?w.startP.label:w.endP?.comp?.type==='petoupe'?w.endP.label:'';
-    rows.push([w.id,w.section,w.startP?.label||'',w.endP?.label||'',pe,wireLength(w.pts)]);
+    rows.push([w.id,w.wtype||'H07V-K',w.section,w.color||'',w.startP?.label||'',w.endP?.label||'',wireSplineLength(w)]);
   });
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
