@@ -289,31 +289,60 @@ function toggleWP(){
 }
 
 // Input flottant au clic sur une cotation
+// Reste ouvert jusqu'à : Entrée, bouton ✓, Échap, ou clic en dehors
 function showCoteInput(screenX,screenY,val,min,max,onSubmit){
   const old=document.getElementById('_cote_inp');if(old)old.remove();
   const wrap=document.createElement('div');
   wrap.id='_cote_inp';
-  wrap.style.cssText=`position:fixed;left:${screenX-50}px;top:${screenY-22}px;z-index:9999;background:#fff;border:2px solid #1D9E75;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.25);padding:4px 6px;display:flex;align-items:center;gap:4px`;
+  // Positionner en s'assurant que la boîte reste visible à l'écran
+  const lx=Math.min(screenX-50, window.innerWidth-160);
+  const ly=Math.max(4, screenY-26);
+  wrap.style.cssText=`position:fixed;left:${lx}px;top:${ly}px;z-index:9999;background:#fff;border:2.5px solid #1D9E75;border-radius:9px;box-shadow:0 6px 24px rgba(0,0,0,.28);padding:5px 8px;display:flex;align-items:center;gap:6px`;
+  // Label de la valeur actuelle
+  const lbl=document.createElement('span');
+  lbl.style.cssText='font-size:9px;color:#888;white-space:nowrap';
+  lbl.textContent=`${Math.round(val)} mm →`;
+  // Champ de saisie
   const inp=document.createElement('input');
   inp.type='number';inp.value=Math.round(val);inp.min=min;inp.max=max;inp.step=1;
-  inp.style.cssText='width:62px;font-size:13px;font-weight:700;border:none;outline:none;text-align:center;color:#0A5040;background:transparent';
+  inp.style.cssText='width:68px;font-size:14px;font-weight:700;border:none;outline:none;text-align:center;color:#0A5040;background:transparent';
+  const unit=document.createElement('span');unit.textContent='mm';unit.style.cssText='font-size:10px;color:#888;margin-right:2px';
+  // Bouton valider
   const btn=document.createElement('button');
-  btn.textContent='✓';
-  btn.style.cssText='font-size:12px;font-weight:700;background:#1D9E75;color:#fff;border:none;border-radius:5px;padding:2px 6px;cursor:pointer;line-height:1.4';
-  wrap.appendChild(inp);wrap.appendChild(btn);
-  document.body.appendChild(wrap);inp.focus();inp.select();
+  btn.textContent='✓ OK';
+  btn.style.cssText='font-size:11px;font-weight:700;background:#1D9E75;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap';
+  wrap.appendChild(lbl);wrap.appendChild(inp);wrap.appendChild(unit);wrap.appendChild(btn);
+  document.body.appendChild(wrap);
+  // Focus sans sélectionner — l'utilisateur voit la valeur entière
+  inp.focus();inp.select();
+
+  let closed=false;
   function submit(){
-    const v=parseFloat(inp.value);wrap.remove();
+    if(closed)return;closed=true;
+    const v=parseFloat(inp.value);
+    wrap.remove();
+    document.removeEventListener('mousedown',onOutside,true);
     if(!isNaN(v)&&v>=min&&v<=max){onSubmit(v);draw();}
   }
-  btn.addEventListener('click',submit);
+  function cancel(){
+    if(closed)return;closed=true;
+    wrap.remove();
+    document.removeEventListener('mousedown',onOutside,true);
+  }
+  // Clic en dehors → ferme sans valider
+  function onOutside(e){
+    if(!wrap.contains(e.target))cancel();
+  }
+  // Attendre un tick avant d'armer le listener "dehors" (sinon le clic d'ouverture le déclenche)
+  setTimeout(()=>document.addEventListener('mousedown',onOutside,true),50);
+
+  btn.addEventListener('click',e=>{e.stopPropagation();submit();});
   inp.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();submit();}
-    if(e.key==='Escape'){wrap.remove();}
+    if(e.key==='Escape'){e.preventDefault();cancel();}
     e.stopPropagation();
   });
-  // Ne pas fermer au blur pour permettre les flèches
-  inp.addEventListener('blur',e=>{if(e.relatedTarget===btn)return;setTimeout(()=>{if(document.getElementById('_cote_inp'))submit();},300);});
+  // PAS de handler blur — l'input reste ouvert même si l'utilisateur clique sur les flèches ↑↓
 }
 
 function updateInfo(){
