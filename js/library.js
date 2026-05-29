@@ -159,6 +159,59 @@ const COMPS=[
   {id:'en16',name:'Entrelec 16',sub:'12×61mm 1SNA165553R',brand:'Borniers', group:'Entrelec/ABB',   poles:1, modW:12, modH:61, type:'bornier',color:'#7A5E40'},
   {id:'en25',name:'Entrelec 25',sub:'16×65mm 1SNA165555R',brand:'Borniers', group:'Entrelec/ABB',   poles:1, modW:16, modH:65, type:'bornier',color:'#7A5E40'},
 
+  // ── HAGER — Sectionneurs
+  {id:'hgst2p40', name:'HAB 2P 40A', sub:'HAB240S — 10kA', brand:'Hager', group:'Sectionneurs', poles:2, modW:36, modH:85, type:'sect', color:'#0058A0', ref:'HAB240S'},
+  {id:'hgst2p63', name:'HAB 2P 63A', sub:'HAB263S — 10kA', brand:'Hager', group:'Sectionneurs', poles:2, modW:36, modH:85, type:'sect', color:'#0058A0', ref:'HAB263S'},
+  {id:'hgst4p63', name:'HAB 4P 63A', sub:'HAB463S — 10kA', brand:'Hager', group:'Sectionneurs', poles:4, modW:72, modH:85, type:'sect', color:'#0058A0', ref:'HAB463S'},
+
+  // ── HAGER MCN — Disjoncteurs 1P (courbe C, 6kA)
+  {id:'hg1p6',  name:'MCN 1P  6A', sub:'MCN106 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN106', conn:'std'},
+  {id:'hg1p10', name:'MCN 1P 10A', sub:'MCN110 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN110', conn:'std'},
+  {id:'hg1p16', name:'MCN 1P 16A', sub:'MCN116 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN116', conn:'std'},
+  {id:'hg1p20', name:'MCN 1P 20A', sub:'MCN120 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN120', conn:'std'},
+  {id:'hg1p25', name:'MCN 1P 25A', sub:'MCN125 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN125', conn:'std'},
+  {id:'hg1p32', name:'MCN 1P 32A', sub:'MCN132 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN132', conn:'std'},
+  {id:'hg1p40', name:'MCN 1P 40A', sub:'MCN140 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN140', conn:'std'},
+  {id:'hg1p63', name:'MCN 1P 63A', sub:'MCN163 6kA cour.C', brand:'Hager', group:'MCN 1P', poles:1, modW:17.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN163', conn:'std'},
+
+  // ── HAGER MCN — Disjoncteurs 2P
+  {id:'hg2p6',  name:'MCN 2P  6A', sub:'MCN206 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN206', conn:'std'},
+  {id:'hg2p10', name:'MCN 2P 10A', sub:'MCN210 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN210', conn:'std'},
+  {id:'hg2p16', name:'MCN 2P 16A', sub:'MCN216 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN216', conn:'std'},
+  {id:'hg2p20', name:'MCN 2P 20A', sub:'MCN220 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN220', conn:'std'},
+  {id:'hg2p25', name:'MCN 2P 25A', sub:'MCN225 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN225', conn:'std'},
+  {id:'hg2p32', name:'MCN 2P 32A', sub:'MCN232 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN232', conn:'std'},
+  {id:'hg2p40', name:'MCN 2P 40A', sub:'MCN240 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN240', conn:'std'},
+  {id:'hg2p63', name:'MCN 2P 63A', sub:'MCN263 6kA cour.C', brand:'Hager', group:'MCN 2P', poles:2, modW:35, modH:85, type:'disj', color:'#0058A0', ref:'MCN263', conn:'std'},
+
+  // ── HAGER MCN — Disjoncteurs 3P
+  {id:'hg3p6',  name:'MCN 3P  6A', sub:'MCN306 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN306', conn:'std'},
+  {id:'hg3p10', name:'MCN 3P 10A', sub:'MCN310 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN310', conn:'std'},
+  {id:'hg3p16', name:'MCN 3P 16A', sub:'MCN316 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN316', conn:'std'},
+  {id:'hg3p20', name:'MCN 3P 20A', sub:'MCN320 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN320', conn:'std'},
+  {id:'hg3p25', name:'MCN 3P 25A', sub:'MCN325 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN325', conn:'std'},
+  {id:'hg3p32', name:'MCN 3P 32A', sub:'MCN332 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN332', conn:'std'},
+  {id:'hg3p40', name:'MCN 3P 40A', sub:'MCN340 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN340', conn:'std'},
+  {id:'hg3p63', name:'MCN 3P 63A', sub:'MCN363 6kA cour.C', brand:'Hager', group:'MCN 3P', poles:3, modW:52.5, modH:85, type:'disj', color:'#0058A0', ref:'MCN363', conn:'std'},
+
+  // ── HAGER MCN — Disjoncteurs 4P
+  {id:'hg4p6',  name:'MCN 4P  6A', sub:'MCN406 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN406', conn:'std'},
+  {id:'hg4p10', name:'MCN 4P 10A', sub:'MCN410 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN410', conn:'std'},
+  {id:'hg4p16', name:'MCN 4P 16A', sub:'MCN416 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN416', conn:'std'},
+  {id:'hg4p20', name:'MCN 4P 20A', sub:'MCN420 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN420', conn:'std'},
+  {id:'hg4p25', name:'MCN 4P 25A', sub:'MCN425 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN425', conn:'std'},
+  {id:'hg4p32', name:'MCN 4P 32A', sub:'MCN432 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN432', conn:'std'},
+  {id:'hg4p40', name:'MCN 4P 40A', sub:'MCN440 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN440', conn:'std'},
+  {id:'hg4p63', name:'MCN 4P 63A', sub:'MCN463 6kA cour.C', brand:'Hager', group:'MCN 4P', poles:4, modW:70, modH:85, type:'disj', color:'#0058A0', ref:'MCN463', conn:'std'},
+
+  // ── HAGER — Interrupteurs différentiels CHN
+  {id:'hgdf2p25',  name:'CHN 2P 25A 30mA',  sub:'CHN225S AC 30mA',  brand:'Hager', group:'Diff. CHN 2P', poles:2, modW:35, modH:90, type:'diff', color:'#0058A0', ref:'CHN225S'},
+  {id:'hgdf2p40',  name:'CHN 2P 40A 30mA',  sub:'CHN240S AC 30mA',  brand:'Hager', group:'Diff. CHN 2P', poles:2, modW:35, modH:90, type:'diff', color:'#0058A0', ref:'CHN240S'},
+  {id:'hgdf2p63',  name:'CHN 2P 63A 30mA',  sub:'CHN263S AC 30mA',  brand:'Hager', group:'Diff. CHN 2P', poles:2, modW:35, modH:90, type:'diff', color:'#0058A0', ref:'CHN263S'},
+  {id:'hgdf4p25',  name:'CHN 4P 25A 30mA',  sub:'CHN425S AC 30mA',  brand:'Hager', group:'Diff. CHN 4P', poles:4, modW:70, modH:90, type:'diff', color:'#0058A0', ref:'CHN425S'},
+  {id:'hgdf4p40',  name:'CHN 4P 40A 30mA',  sub:'CHN440S AC 30mA',  brand:'Hager', group:'Diff. CHN 4P', poles:4, modW:70, modH:90, type:'diff', color:'#0058A0', ref:'CHN440S'},
+  {id:'hgdf4p63',  name:'CHN 4P 63A 30mA',  sub:'CHN463S AC 30mA',  brand:'Hager', group:'Diff. CHN 4P', poles:4, modW:70, modH:90, type:'diff', color:'#0058A0', ref:'CHN463S'},
+
   // ── PRESSE-ÉTOUPES
   {id:'pe16',name:'PE ISO 16',sub:'Ø16mm — M16',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:16,modH:16,type:'petoupe',color:'#505050',isoD:16},
   {id:'pe20',name:'PE ISO 20',sub:'Ø20mm — M20',brand:'Presse-étoupes',group:'Presse-étoupes',poles:1,modW:20,modH:20,type:'petoupe',color:'#505050',isoD:20},
@@ -173,6 +226,6 @@ const COMPS=[
   {id:'vbl',name:'Voyant bleu',  sub:'Ø22mm LED',brand:'Signalisation',group:'Voyants Ø22mm',poles:1,modW:22,modH:22,type:'voyant',color:'#0050CC'},
 ];
 
-const BRAND_COLORS={'Legrand DX3':'#CC2020','Schneider Acti9':'#009c41',
+const BRAND_COLORS={'Legrand DX3':'#CC2020','Schneider Acti9':'#009c41','Hager':'#0058A0',
   'Borniers':'#E85C00','Accessoires':'#534AB7',
   'Presse-étoupes':'#505050','Signalisation':'#6B3DA6'};

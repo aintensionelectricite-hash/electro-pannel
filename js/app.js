@@ -189,7 +189,12 @@ function togDoor(){
 function clearAll(){
   if(!confirm('Vider tout ?'))return;
   PLACED.length=0;DOOR_PLACED.length=0;WIRES.length=0;
-  wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;draw();updateWT();updateInfo();schedSave();
+  wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;
+  for(const k in RAIL_OFFSETS)delete RAIL_OFFSETS[k];
+  for(const k in ZONE_DEPTHS)delete ZONE_DEPTHS[k];
+  for(const k in RAIL_FRONT_Z)delete RAIL_FRONT_Z[k];
+  cutLineY=null;
+  draw();updateWT();updateInfo();schedSave();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
