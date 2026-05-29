@@ -447,8 +447,39 @@ function routeWireStrict(startPt,endPt,startComp,endComp,layout,startPtId,endPtI
   const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-y1)<Math.abs(b.y+b.h/2-y1)?a:b);
   const gY=goulotte.y+goulotte.h/2;
 
-  // 4 points stricts : départ → entrée goulotte (même X) → sortie goulotte (même X que arrivée) → arrivée
-  return[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
+  // 4 points de base puis waypoints tous les 100mm
+  const basePts=[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
+  return addWaypoints(basePts,100);
+}
+
+// Ajoute des waypoints intermédiaires tous les spacingMM mm sur chaque segment
+function addWaypoints(pts,spacingMM=100){
+  if(pts.length<2)return pts;
+  const res=[pts[0]];
+  for(let i=1;i<pts.length;i++){
+    const[x1,y1]=pts[i-1],[x2,y2]=pts[i];
+    const d=Math.hypot(x2-x1,y2-y1);
+    if(d>spacingMM*1.5){
+      const n=Math.round(d/spacingMM);
+      for(let j=1;j<n;j++)res.push([x1+(x2-x1)*j/n,y1+(y2-y1)*j/n]);
+    }
+    res.push([x2,y2]);
+  }
+  return res;
+}
+
+// Distance d'un point à un segment (coords canvas)
+function ptSegDist(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
+  if(len2<0.001)return Math.hypot(px-ax,py-ay);
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/len2));
+  return Math.hypot(px-(ax+t*dx),py-(ay+t*dy));
+}
+// Paramètre t de la projection sur segment
+function ptSegT(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
+  if(len2<0.001)return 0;
+  return Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/len2));
 }
 
 function wireLength(pts){
@@ -1078,14 +1109,16 @@ function drawWire(ctx,wire,sc,layout){
     const[px,py]=W2F(wx2,wy2);
     ctx.fillStyle=hl?'#FF9500':'#8B5C00';ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
   });
-  // Handles intermédiaires déplaçables (pts[1] et pts[2]) — visibles quand surligné
-  if(hl&&wire.pts.length>=4){
-    [1,2].forEach(i=>{
-      const[mx,my]=W2F(wire.pts[i][0],wire.pts[i][1]);
-      ctx.fillStyle='rgba(255,165,0,.95)';ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.arc(mx,my,6,0,Math.PI*2);ctx.fill();ctx.stroke();
-      ctx.font='bold 7px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
-      ctx.fillText(i===1?'2':'3',mx,my+2.5);
+  // Handles : tous les points intermédiaires visibles quand surligné
+  if(hl&&wire.pts.length>2){
+    wire.pts.slice(1,-1).forEach((pt,idx)=>{
+      const[mx,my]=W2F(pt[0],pt[1]);
+      ctx.fillStyle='rgba(255,155,0,.92)';ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(mx,my,5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      if(wire.pts.length<=10){
+        ctx.font='bold 6px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
+        ctx.fillText(idx+2,mx,my+2.2);
+      }
     });
   }
   // Label Wn
@@ -1362,27 +1395,48 @@ function setupFaceCanvas(){
       const chit=COTE_HITS.find(c=>c.r>0&&Math.hypot(px_-c.x,py_-c.y)<c.r);
       if(chit&&chit.inputId){const inp=document.getElementById(chit.inputId);if(inp){inp.focus();inp.select();}return;}
     }
-    // ── Handles intermédiaires des fils déplaçables
+    // ── Points intermédiaires fils — drag libre ou insertion par clic segment
     if(!wm.active){
-      const whit=WIRES.flatMap(w=>w.pts.length>=4?[1,2].map(i=>({w,i})):[]).find(({w,i})=>{
-        const[mx,my2]=W2F(w.pts[i][0],w.pts[i][1]);
-        return Math.hypot(px_-mx,py_-my2)<8;
-      });
+      // 1. Point intermédiaire existant → drag libre 2D
+      let whit=null;
+      for(const w of WIRES){
+        for(let i=1;i<w.pts.length-1;i++){
+          const[mx,my2]=W2F(w.pts[i][0],w.pts[i][1]);
+          if(Math.hypot(px_-mx,py_-my2)<8){whit={w,i};break;}
+        }
+        if(whit)break;
+      }
       if(whit){
         WIRES.forEach(w2=>w2.highlighted=w2===whit.w);
         wireDragging={wire:whit.w,ptIdx:whit.i};
-        const gl=getLayout().zones.filter(z=>z.type==='goulH');
         function onWPMove(ev){
-          const[,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
-          const g=gl.reduce((a,b)=>Math.abs(a.y+a.h/2-wy2)<Math.abs(b.y+b.h/2-wy2)?a:b);
-          const gY=g.y+g.h/2;
-          wireDragging.wire.pts[1]=[wireDragging.wire.pts[1][0],gY];
-          wireDragging.wire.pts[2]=[wireDragging.wire.pts[2][0],gY];
+          const[wx2,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
+          wireDragging.wire.pts[wireDragging.ptIdx]=[wx2,wy2];
           draw();updateWT();
         }
         function onWPUp(){wireDragging=null;document.removeEventListener('mousemove',onWPMove);document.removeEventListener('mouseup',onWPUp);draw();updateWT();}
         document.addEventListener('mousemove',onWPMove);document.addEventListener('mouseup',onWPUp);
         return;
+      }
+      // 2. Clic sur un segment de fil → insérer un nouveau waypoint
+      let segHit=null;
+      for(const w of WIRES){
+        for(let i=0;i<w.pts.length-1;i++){
+          const[ax,ay]=W2F(w.pts[i][0],w.pts[i][1]);
+          const[bx,by]=W2F(w.pts[i+1][0],w.pts[i+1][1]);
+          if(ptSegDist(px_,py_,ax,ay,bx,by)<6){
+            const t=ptSegT(px_,py_,ax,ay,bx,by);
+            segHit={w,i,newPt:[w.pts[i][0]+(w.pts[i+1][0]-w.pts[i][0])*t,
+                                w.pts[i][1]+(w.pts[i+1][1]-w.pts[i][1])*t]};
+            break;
+          }
+        }
+        if(segHit)break;
+      }
+      if(segHit){
+        WIRES.forEach(w2=>w2.highlighted=w2===segHit.w);
+        segHit.w.pts.splice(segHit.i+1,0,segHit.newPt);
+        draw();updateWT();return;
       }
     }
     // Clic sur œils → toggle direction
@@ -1463,7 +1517,29 @@ function setupFaceCanvas(){
   });
   cv.addEventListener('contextmenu',e=>{
     e.preventDefault();
-    const r=cv.getBoundingClientRect();const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
+    const r=cv.getBoundingClientRect();
+    const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
+    const px_=e.clientX-r.left,py_=e.clientY-r.top;
+    // Clic droit sur un point intermédiaire de fil → supprimer ce point
+    for(const w of WIRES){
+      for(let i=1;i<w.pts.length-1;i++){
+        const[mx,my2]=W2F(w.pts[i][0],w.pts[i][1]);
+        if(Math.hypot(px_-mx,py_-my2)<8){w.pts.splice(i,1);draw();updateWT();return;}
+      }
+    }
+    // Clic droit sur un fil → supprimer le fil entier
+    for(let wi=WIRES.length-1;wi>=0;wi--){
+      const w=WIRES[wi];
+      for(let i=0;i<w.pts.length-1;i++){
+        const[ax,ay]=W2F(w.pts[i][0],w.pts[i][1]);
+        const[bx,by]=W2F(w.pts[i+1][0],w.pts[i+1][1]);
+        if(ptSegDist(px_,py_,ax,ay,bx,by)<6){
+          if(confirm(`Supprimer le fil ${w.id} ?`)){WIRES.splice(wi,1);draw();updateWT();}
+          return;
+        }
+      }
+    }
+    // Clic droit sur composant → supprimer
     const idx=PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
     if(idx>=0&&confirm('Supprimer ce composant ?')){
       const rm=PLACED[idx];PLACED.splice(idx,1);
