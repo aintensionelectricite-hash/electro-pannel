@@ -470,8 +470,14 @@ function getConnPts(p){
   if(c.type==='disj'||c.type==='diff'||c.type==='sect')
     return[{id:'top',wx:p.wx+cw/2,wy:p.wy},{id:'bot',wx:p.wx+cw/2,wy:p.wy+ch}];
   if(c.type==='repot'){
-    // Points latéraux de chaque plot
-    const pts=[];for(let i=0;i<c.poles;i++){const xp=p.wx+(i+.5)*cw/c.poles;pts.push({id:`t${i}`,wx:xp,wy:p.wy},{id:`b${i}`,wx:xp,wy:p.wy+ch});}
+    // 1 entrée en haut (centre) + N sorties décalées en bas (éventail)
+    const N=c.poles;
+    const stagMM=Math.min(30,(N-1)*4); // décalage total max 30mm
+    const step=N>1?stagMM/(N-1):0;
+    const pts=[{id:'in',wx:p.wx+cw/2,wy:p.wy}]; // entrée alimentation
+    for(let i=0;i<N;i++){
+      pts.push({id:`b${i}`,wx:p.wx+(i+.5)*cw/N,wy:p.wy+ch+i*step});
+    }
     return pts;
   }
   if(c.type==='bornier')
@@ -542,6 +548,12 @@ function autoLabel(comp){
   if(comp.type==='bornier'){return`B${PLACED.filter(p=>p.comp?.type==='bornier').length+1}`;}
   if(comp.type==='petoupe'){return`PE${PLACED.filter(p=>p.comp?.type==='petoupe').length+1}`;}
   if(comp.type==='voyant'){return`V${DOOR_PLACED.filter(p=>p.comp?.type==='voyant').length+1}`;}
+  // Disjoncteurs/sectionneurs/différentiels : numérotation avec préfixe type
+  if(comp.type==='disj'){const n=PLACED.filter(p=>p.comp?.type==='disj').length+1;return`Q${n}`;}
+  if(comp.type==='diff'){const n=PLACED.filter(p=>p.comp?.type==='diff').length+1;return`ID${n}`;}
+  if(comp.type==='sect'){const n=PLACED.filter(p=>p.comp?.type==='sect').length+1;return`QS${n}`;}
+  if(comp.type==='repot'){const n=PLACED.filter(p=>p.comp?.type==='repot').length+1;return`RP${n}`;}
+  if(comp.type==='repartiteur'){const n=PLACED.filter(p=>p.comp?.type==='repartiteur').length+1;return`REP${n}`;}
   return comp.name;
 }
 
@@ -578,9 +590,9 @@ function routeWireStrict(startPt,endPt,startComp,endComp,layout,startPtId,endPtI
   const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-y1)<Math.abs(b.y+b.h/2-y1)?a:b);
   const gY=goulotte.y+goulotte.h/2;
 
-  // 4 points de base puis waypoints tous les 50mm
+  // 4 points de base puis waypoints tous les 20mm
   const basePts=[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
-  return addWaypoints(basePts,50);
+  return addWaypoints(basePts,20);
 }
 
 // Ajoute des waypoints intermédiaires tous les spacingMM mm sur chaque segment
@@ -1491,25 +1503,45 @@ function drawComp(ctx,p,sc){
       for(let pi=0;pi<c.poles;pi++){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px2+pi*pw2+pw2/2,py+ch/2,Math.max(1.5,ch*.28),0,Math.PI*2);ctx.fill();}
     } else if(c.type==='repot'){
       // Répartiteur de potentiel monopotentiel
+      const N=c.poles;
+      const stagPx=Math.min(sw(30),sw((N-1)*4)); // décalage total en pixels
+      const step=N>1?stagPx/(N-1):0;
+      const pw2=cw/N;
+      // ── Queues de sortie décalées (dessinées AVANT le corps pour rester derrière)
+      ctx.strokeStyle='rgba(160,80,0,.5)';ctx.lineWidth=.8;
+      for(let pi=0;pi<N;pi++){
+        const cx2=px2+(pi+.5)*pw2, tailY=py+ch+pi*step;
+        ctx.beginPath();ctx.moveTo(cx2,py+ch);ctx.lineTo(cx2,tailY);ctx.stroke();
+      }
+      // Queue entrée (haut)
+      ctx.beginPath();ctx.moveTo(px2+cw/2,py);ctx.lineTo(px2+cw/2,py-Math.max(4,ch*.4));ctx.stroke();
+      // ── Corps
       const bg2=ctx.createLinearGradient(px2,py,px2,py+ch);
       bg2.addColorStop(0,'#E8A040');bg2.addColorStop(1,'#B06000');
       ctx.fillStyle=bg2;ctx.strokeStyle='#804800';ctx.lineWidth=.7;
       rr(ctx,px2,py,cw,ch,2);ctx.fill();ctx.stroke();
-      // Plots de connexion
-      const pw2=cw/c.poles;
-      for(let pi=0;pi<c.poles;pi++){
-        const px3=px2+pi*pw2,cx2=px3+pw2/2;
-        ctx.fillStyle='rgba(0,0,0,.35)';ctx.strokeStyle='#804800';ctx.lineWidth=.4;
-        rr(ctx,px3+1,py+ch*.1,pw2-2,ch*.8,1);ctx.fill();ctx.stroke();
-        // Trou de vis
-        ctx.fillStyle='#1A1A1A';ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1.2,pw2*.18),0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=.4;ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1.2,pw2*.18),0,Math.PI*2);ctx.stroke();
+      // Plots (vis)
+      for(let pi=0;pi<N;pi++){
+        const cx2=px2+(pi+.5)*pw2;
+        ctx.fillStyle='rgba(0,0,0,.3)';ctx.strokeStyle='#804800';ctx.lineWidth=.4;
+        rr(ctx,px2+pi*pw2+.8,py+ch*.1,pw2-1.6,ch*.8,1);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#1A1A1A';ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1,pw2*.17),0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=.4;ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1,pw2*.17),0,Math.PI*2);ctx.stroke();
       }
-      // Label
+      // ── Points de connexion décalés (petits cercles orange au bout des queues)
+      for(let pi=0;pi<N;pi++){
+        const cx2=px2+(pi+.5)*pw2, tailY=py+ch+pi*step;
+        ctx.fillStyle='rgba(220,110,0,.88)';ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(cx2,tailY,2.2,0,Math.PI*2);ctx.fill();ctx.stroke();
+      }
+      // Point entrée (haut)
+      ctx.fillStyle='rgba(180,80,0,.88)';ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(px2+cw/2,py-Math.max(4,ch*.4),2.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      // ── Label
       if(cw>20){
-        const fs=Math.max(5,Math.round(ch*.38));
+        const fs=Math.max(5,Math.round(ch*.36));
         ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.textAlign='center';
-        ctx.fillText(p.label||`${c.poles}P`,px2+cw/2,py+ch*.5+fs*.35);
+        ctx.fillText(p.label||`${N}P`,px2+cw/2,py+ch*.55+fs*.35);
       }
     } else if(c.type==='repartiteur'){
       // Corps
