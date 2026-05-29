@@ -67,6 +67,10 @@ canvas{display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1),0 0 
 #wp.collapsed>*:not(.panel-toggle){display:none}
 .panel-toggle{width:100%;font-size:10px;padding:3px 4px;border-radius:5px;border:.5px solid #D5D3CF;background:#F0F0EC;cursor:pointer;color:#666;text-align:center;flex-shrink:0;writing-mode:horizontal-tb}
 #lib.collapsed .panel-toggle,#wp.collapsed .panel-toggle{writing-mode:vertical-lr;padding:6px 2px;border-radius:5px;font-size:9px}
+/* Poignées de redimensionnement */
+.resize-h{width:6px;flex-shrink:0;cursor:col-resize;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:3px;transition:background .1s}
+.resize-h:hover,.resize-h.dragging{background:rgba(24,95,165,.18)}
+.resize-h::after{content:'⋮';font-size:14px;color:#C0C0C0;user-select:none}
 /* Plate drop zone highlight */
 canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
 </style>
@@ -129,6 +133,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
   <div id="lib">
     <button class="panel-toggle" onclick="toggleLib()" title="Replier/déplier bibliothèque">◀ Biblio</button>
   </div>
+  <div class="resize-h" id="rh-lib" title="Redimensionner bibliothèque"></div>
   <div id="views-area">
     <canvas id="cv-face"></canvas>
     <canvas id="cv-plan" style="cursor:default"></canvas>
@@ -136,6 +141,7 @@ canvas.pe-drop-target{outline:2px dashed #E85C00;outline-offset:2px}
     <canvas id="cv-bot" style="display:none"></canvas>
     <canvas id="cv-door" style="display:none"></canvas>
   </div>
+  <div class="resize-h" id="rh-wp" title="Redimensionner tableau filerie"></div>
   <div id="wp">
     <button class="panel-toggle" onclick="toggleWP()" title="Replier/déplier filerie">Filerie ▶</button>
     <div class="wp-hdr">
@@ -184,6 +190,9 @@ const COMPS=[
   {id:'pg12',name:'Peigne 12P',sub:'pas 9mm',      group:'Accessoires',     poles:12,modW:108, modH:10, type:'peigne', color:'#993C1D'},
   {id:'pg24',name:'Peigne 24P',sub:'pas 9mm',      group:'Accessoires',     poles:24,modW:216, modH:10, type:'peigne', color:'#993C1D'},
   {id:'rep4',name:'Répart. 4B',sub:'4 barreaux',   group:'Accessoires',     poles:4, modW:60,  modH:40, type:'repartiteur',color:'#534AB7'},
+  // Répartiteurs de potentiel monopotentiel
+  {id:'rp5', name:'Rép.pot. 5P',sub:'5 points mono',group:'Accessoires',    poles:5, modW:45,  modH:18, type:'repot',    color:'#B06000'},
+  {id:'rp8', name:'Rép.pot. 8P',sub:'8 points mono',group:'Accessoires',    poles:8, modW:72,  modH:18, type:'repot',    color:'#B06000'},
   // Phoenix Contact UTTB
   {id:'ph15',name:'UTTB 1.5',sub:'5.2×51mm',       group:'Phoenix Contact', poles:1, modW:5.2, modH:51, type:'bornier',color:'#E85C00'},
   {id:'ph25',name:'UTTB 2.5',sub:'6.2×51mm',       group:'Phoenix Contact', poles:1, modW:6.2, modH:51, type:'bornier',color:'#E85C00'},
@@ -383,6 +392,11 @@ function getConnPts(p){
   const c=p.comp,cw=c.modW,ch=c.modH;
   if(c.type==='disj'||c.type==='diff'||c.type==='sect')
     return[{id:'top',wx:p.wx+cw/2,wy:p.wy},{id:'bot',wx:p.wx+cw/2,wy:p.wy+ch}];
+  if(c.type==='repot'){
+    // Points latéraux de chaque plot
+    const pts=[];for(let i=0;i<c.poles;i++){const xp=p.wx+(i+.5)*cw/c.poles;pts.push({id:`t${i}`,wx:xp,wy:p.wy},{id:`b${i}`,wx:xp,wy:p.wy+ch});}
+    return pts;
+  }
   if(c.type==='bornier')
     return[{id:'left',wx:p.wx,wy:p.wy+ch/2},{id:'right',wx:p.wx+cw,wy:p.wy+ch/2}];
   if(c.type==='petoupe')
@@ -487,9 +501,9 @@ function routeWireStrict(startPt,endPt,startComp,endComp,layout,startPtId,endPtI
   const goulotte=pool.reduce((a,b)=>Math.abs(a.y+a.h/2-y1)<Math.abs(b.y+b.h/2-y1)?a:b);
   const gY=goulotte.y+goulotte.h/2;
 
-  // 4 points de base puis waypoints tous les 100mm
+  // 4 points de base puis waypoints tous les 50mm
   const basePts=[[x1,y1],[x1,gY],[x2,gY],[x2,y2]];
-  return addWaypoints(basePts,100);
+  return addWaypoints(basePts,50);
 }
 
 // Ajoute des waypoints intermédiaires tous les spacingMM mm sur chaque segment
@@ -1397,14 +1411,56 @@ function drawComp(ctx,p,sc){
       rr(ctx,px2,py,cw,ch,1);ctx.fill();ctx.stroke();
       const pw2=cw/c.poles;
       for(let pi=0;pi<c.poles;pi++){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px2+pi*pw2+pw2/2,py+ch/2,Math.max(1.5,ch*.28),0,Math.PI*2);ctx.fill();}
+    } else if(c.type==='repot'){
+      // Répartiteur de potentiel monopotentiel
+      const bg2=ctx.createLinearGradient(px2,py,px2,py+ch);
+      bg2.addColorStop(0,'#E8A040');bg2.addColorStop(1,'#B06000');
+      ctx.fillStyle=bg2;ctx.strokeStyle='#804800';ctx.lineWidth=.7;
+      rr(ctx,px2,py,cw,ch,2);ctx.fill();ctx.stroke();
+      // Plots de connexion
+      const pw2=cw/c.poles;
+      for(let pi=0;pi<c.poles;pi++){
+        const px3=px2+pi*pw2,cx2=px3+pw2/2;
+        ctx.fillStyle='rgba(0,0,0,.35)';ctx.strokeStyle='#804800';ctx.lineWidth=.4;
+        rr(ctx,px3+1,py+ch*.1,pw2-2,ch*.8,1);ctx.fill();ctx.stroke();
+        // Trou de vis
+        ctx.fillStyle='#1A1A1A';ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1.2,pw2*.18),0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=.4;ctx.beginPath();ctx.arc(cx2,py+ch*.5,Math.max(1.2,pw2*.18),0,Math.PI*2);ctx.stroke();
+      }
+      // Label
+      if(cw>20){
+        const fs=Math.max(5,Math.round(ch*.38));
+        ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='rgba(255,255,255,.9)';ctx.textAlign='center';
+        ctx.fillText(p.label||`${c.poles}P`,px2+cw/2,py+ch*.5+fs*.35);
+      }
     } else if(c.type==='repartiteur'){
+      // Corps
       ctx.fillStyle='#B8B0F0';ctx.strokeStyle='#534AB7';ctx.lineWidth=.7;
       rr(ctx,px2,py,cw,ch,3);ctx.fill();ctx.stroke();
-      const bh=ch/c.poles;
-      for(let bi=0;bi<c.poles;bi++){ctx.fillStyle='#D8D6D2';rr(ctx,px2+4,py+bi*bh+2,cw-8,bh-4,1);ctx.fill();}
-      const fs=Math.max(7,Math.round(cw*.12));
-      ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#26215C';ctx.textAlign='center';
-      ctx.fillText('Rép.',px2+cw/2,py+ch/2+fs*.35);
+      // 4 barreaux de puissance colorés : Ph3(brun), Ph2(noir), Ph1(rouge/gris), N(bleu)
+      const barLabels=['Ph3','Ph2','Ph1','N'];
+      const barColors=['#6D3B1E','#1A1A1A','#808080','#0040C0'];
+      const bh=ch/4;
+      barColors.forEach((bc,bi)=>{
+        const gy=py+bi*bh;
+        const bg=ctx.createLinearGradient(px2,gy,px2,gy+bh);
+        bg.addColorStop(0,bc+'CC');bg.addColorStop(1,bc+'88');
+        ctx.fillStyle=bg;rr(ctx,px2+3,gy+2,cw-6,bh-4,2);ctx.fill();
+        ctx.strokeStyle=bc;ctx.lineWidth=.5;rr(ctx,px2+3,gy+2,cw-6,bh-4,2);ctx.stroke();
+        if(cw>25){
+          const fs=Math.max(6,Math.round(bh*.38));
+          ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
+          ctx.fillText(barLabels[bi],px2+cw/2,gy+bh*.5+fs*.35);
+        }
+      });
+      // Label repère
+      if(p.label&&p.label!==c.name){
+        const fs=Math.max(6,Math.round(cw*.13));
+        ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='rgba(255,255,255,.8)';ctx.textAlign='center';
+        ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1.5;
+        ctx.strokeText(p.label,px2+cw/2,py+ch+fs+2);ctx.fillStyle='#534AB7';
+        ctx.fillText(p.label,px2+cw/2,py+ch+fs+2);
+      }
     }
   }
   ctx.globalAlpha=1;
@@ -1984,6 +2040,28 @@ document.addEventListener('keydown',e=>{
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// RESIZE HANDLES — redimensionnement des panneaux latéraux
+// ═══════════════════════════════════════════════════════════════════════
+function setupResize(handleId,targetId,side,minW,maxW){
+  const handle=document.getElementById(handleId);
+  if(!handle)return;
+  handle.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    const target=document.getElementById(targetId);
+    const startX=e.clientX,startW=target.getBoundingClientRect().width;
+    handle.classList.add('dragging');
+    function onMove(ev){
+      const delta=side==='left'?ev.clientX-startX:startX-ev.clientX;
+      const nw=Math.max(minW,Math.min(maxW,startW+delta));
+      target.style.width=nw+'px';target.style.flexShrink='0';
+      draw(); // redessine pour adapter les canvas
+    }
+    function onUp(){handle.classList.remove('dragging');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
+    document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // SAUVEGARDE SESSION (localStorage)
 // ═══════════════════════════════════════════════════════════════════════
 let _saveTmr=null;
@@ -2069,6 +2147,8 @@ buildLib();
 setupFaceCanvas();
 setupPlanCanvas();
 setupDoorCanvas();
+setupResize('rh-lib','lib','left',80,320);
+setupResize('rh-wp','wp','right',160,500);
 // Charger session sauvegardée
 const _restored=loadSession();
 draw();
