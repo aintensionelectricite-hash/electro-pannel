@@ -273,17 +273,29 @@ function toggleWP(){
 // Input flottant au clic sur une cotation
 function showCoteInput(screenX,screenY,val,min,max,onSubmit){
   const old=document.getElementById('_cote_inp');if(old)old.remove();
+  const wrap=document.createElement('div');
+  wrap.id='_cote_inp';
+  wrap.style.cssText=`position:fixed;left:${screenX-50}px;top:${screenY-22}px;z-index:9999;background:#fff;border:2px solid #1D9E75;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.25);padding:4px 6px;display:flex;align-items:center;gap:4px`;
   const inp=document.createElement('input');
-  inp.id='_cote_inp';inp.type='number';inp.value=Math.round(val);
-  inp.min=min;inp.max=max;inp.step=1;
-  inp.style.cssText=`position:fixed;left:${screenX-32}px;top:${screenY-14}px;width:70px;height:28px;font-size:13px;font-weight:700;padding:3px 7px;border:2.5px solid #1D9E75;border-radius:7px;background:#F6FFFC;color:#0A5040;z-index:9999;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.22);outline:none`;
-  document.body.appendChild(inp);inp.focus();inp.select();
+  inp.type='number';inp.value=Math.round(val);inp.min=min;inp.max=max;inp.step=1;
+  inp.style.cssText='width:62px;font-size:13px;font-weight:700;border:none;outline:none;text-align:center;color:#0A5040;background:transparent';
+  const btn=document.createElement('button');
+  btn.textContent='✓';
+  btn.style.cssText='font-size:12px;font-weight:700;background:#1D9E75;color:#fff;border:none;border-radius:5px;padding:2px 6px;cursor:pointer;line-height:1.4';
+  wrap.appendChild(inp);wrap.appendChild(btn);
+  document.body.appendChild(wrap);inp.focus();inp.select();
   function submit(){
-    const v=parseFloat(inp.value);if(inp.parentNode)inp.remove();
+    const v=parseFloat(inp.value);wrap.remove();
     if(!isNaN(v)&&v>=min&&v<=max){onSubmit(v);draw();}
   }
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}if(e.key==='Escape')inp.remove();e.stopPropagation();});
-  inp.addEventListener('blur',()=>setTimeout(()=>{if(document.getElementById('_cote_inp')===inp)submit();},180));
+  btn.addEventListener('click',submit);
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();submit();}
+    if(e.key==='Escape'){wrap.remove();}
+    e.stopPropagation();
+  });
+  // Ne pas fermer au blur pour permettre les flèches
+  inp.addEventListener('blur',e=>{if(e.relatedTarget===btn)return;setTimeout(()=>{if(document.getElementById('_cote_inp'))submit();},300);});
 }
 
 function updateInfo(){
@@ -540,6 +552,77 @@ function drawSpline(ctx,wpts,minR,sc){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// COTES DE POSITION — affichées au clic sur un élément
+// ═══════════════════════════════════════════════════════════════════════
+function drawPosCotes(ctx,sx,sy,sw,p,layout,sc){
+  const{intX,intW,m,h}=layout;
+  const c=p.comp,cw=c.modW,ch=c.modH;
+  const C='#1060C0';
+  ctx.strokeStyle=C;ctx.fillStyle=C;ctx.lineWidth=.6;
+  const fs=Math.max(7,Math.round(sc*14));
+  ctx.font=`600 ${fs}px system-ui`;
+
+  // ── Cote X : distance depuis bord gauche intérieur
+  const dx=Math.round(p.wx-intX);
+  if(dx>=0){
+    const y0=sy(p.wy)-18;
+    const x1=sx(intX),x2=sx(p.wx);
+    if(Math.abs(x2-x1)>8){
+      ctx.setLineDash([4,2]);
+      ctx.beginPath();ctx.moveTo(x1,sy(p.wy));ctx.lineTo(x1,y0+4);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x2,sy(p.wy));ctx.lineTo(x2,y0+4);ctx.stroke();
+      ctx.setLineDash([]);ctx.lineWidth=.7;
+      ctx.beginPath();ctx.moveTo(x1,y0);ctx.lineTo(x2,y0);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x1,y0-3);ctx.lineTo(x1,y0+3);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x2,y0-3);ctx.lineTo(x2,y0+3);ctx.stroke();
+      ctx.textAlign='center';ctx.fillText(`X:${dx}`,( x1+x2)/2,y0-4);
+    }
+  }
+
+  // ── Cote largeur composant
+  const compW=Math.round(cw);
+  {
+    const y1=sy(p.wy)-8;
+    const xa=sx(p.wx),xb=sx(p.wx+cw);
+    ctx.setLineDash([2,2]);ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(xa,sy(p.wy));ctx.lineTo(xa,y1+2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(xb,sy(p.wy));ctx.lineTo(xb,y1+2);ctx.stroke();
+    ctx.setLineDash([]);ctx.lineWidth=.6;
+    ctx.beginPath();ctx.moveTo(xa,y1);ctx.lineTo(xb,y1);ctx.stroke();
+    ctx.textAlign='center';ctx.fillStyle='rgba(16,96,192,.7)';
+    ctx.fillText(`${compW}mm`,( xa+xb)/2,y1-3);ctx.fillStyle=C;
+  }
+
+  // ── Cote Y : distance depuis bord supérieur intérieur (y=m)
+  if(p.type==='comp'&&c.type!=='petoupe'){
+    const refY=p.railRef?p.railRef.y:p.wy;
+    const dy=Math.round(refY-m);
+    const x0=sx(intX)-22;
+    const ya=sy(m),yb=sy(refY);
+    if(Math.abs(yb-ya)>8){
+      ctx.setLineDash([4,2]);ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(sx(intX),ya);ctx.lineTo(x0+3,ya);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sx(intX),yb);ctx.lineTo(x0+3,yb);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(x0,ya);ctx.lineTo(x0,yb);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x0-3,ya);ctx.lineTo(x0+3,ya);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x0-3,yb);ctx.lineTo(x0+3,yb);ctx.stroke();
+      ctx.save();ctx.translate(x0-fs-1,(ya+yb)/2);ctx.rotate(-Math.PI/2);
+      ctx.textAlign='center';ctx.fillText(`Y:${dy}`,0,0);ctx.restore();
+    }
+  }
+
+  // ── Pour PE : indiquer la bande et distance X
+  if(c.type==='petoupe'){
+    const bLbl=p.band==='top'?'Bande haute':'Bande basse';
+    const[qx,qy]=W2F(p.wx+cw/2,p.wy+ch/2);
+    ctx.textAlign='center';ctx.fillStyle='rgba(16,96,192,.85)';
+    ctx.font=`500 ${Math.max(7,fs-1)}px system-ui`;
+    ctx.fillText(bLbl,qx,qy+ch*sc*.5+10);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // DESSIN PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════
 function draw(){
@@ -629,11 +712,13 @@ function draw(){
     });
   });
 
-  // ── Sélection
+  // ── Sélection + cotes de position
   if(selectedComp?.type==='comp'){
-    const c=selectedComp.comp;const[px,py]=W2F(selectedComp.wx,selectedComp.wy);
+    const c=selectedComp.comp;const[spx,spy]=W2F(selectedComp.wx,selectedComp.wy);
     ctx.strokeStyle='#185FA5';ctx.lineWidth=2;ctx.setLineDash([3,2]);
-    rr(ctx,px-3,py-3,c.modW*sc+6,c.modH*sc+6,4);ctx.stroke();ctx.setLineDash([]);
+    rr(ctx,spx-3,spy-3,c.modW*sc+6,c.modH*sc+6,4);ctx.stroke();ctx.setLineDash([]);
+    // Cotes de position
+    drawPosCotes(ctx,sx,sy,sw,selectedComp,layout,sc);
   }
 
   // ── Trait de coupe A-A
@@ -1172,19 +1257,44 @@ function drawComp(ctx,p,sc){
   if(p===dragging)ctx.globalAlpha=.6;
   if(p===hoveredComp&&p!==selectedComp){ctx.save();ctx.strokeStyle='rgba(24,95,165,.4)';ctx.lineWidth=2;ctx.setLineDash([]);rr(ctx,px2-2,py-2,cw+4,ch+4,5);ctx.stroke();ctx.restore();}
   if(c.type==='petoupe'){
-    // Presse-étoupe
-    const cx=px2+cw/2,cy=py+ch/2,r=Math.max(cw,ch)/2;
-    const rg=ctx.createRadialGradient(cx-r*.2,cy-r*.2,r*.05,cx,cy,r);
-    rg.addColorStop(0,'#D8D8D8');rg.addColorStop(.6,'#909090');rg.addColorStop(1,'#606060');
-    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#404040';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
-    ctx.fillStyle='#282828';ctx.beginPath();ctx.arc(cx,cy,r*.35,0,Math.PI*2);ctx.fill();
-    if(r>6){
-      const fs=Math.max(5,Math.round(r*.42));
+    // ── Coupe verticale presse-étoupe (profil vu de face)
+    const cx=px2+cw/2;
+    const band=p.band||'top';
+    const topOut=band==='top'; // le câble sort par le haut
+    // Gradient métalique (reflet cylindrique horizontal)
+    const mg=ctx.createLinearGradient(px2,py,px2+cw,py);
+    mg.addColorStop(0,'#555');mg.addColorStop(.2,'#AAA');mg.addColorStop(.5,'#E2E2E2');
+    mg.addColorStop(.8,'#AAA');mg.addColorStop(1,'#555');
+    // Corps principal
+    ctx.fillStyle=mg;ctx.strokeStyle='#404040';ctx.lineWidth=.7;
+    ctx.fillRect(px2,py,cw,ch);ctx.strokeRect(px2,py,cw,ch);
+    // Écrou hexagonal (côté extérieur)
+    const nutH=Math.max(3,ch*.3),nutW=cw*1.35;
+    const nutY=topOut?py:py+ch-nutH;
+    ctx.fillStyle='#909090';ctx.strokeStyle='#555';ctx.lineWidth=.6;
+    ctx.fillRect(cx-nutW/2,nutY,nutW,nutH);ctx.strokeRect(cx-nutW/2,nutY,nutW,nutH);
+    // Facettes hex
+    [.25,.75].forEach(f=>{ctx.beginPath();ctx.moveTo(cx-nutW/2+nutW*f,nutY);ctx.lineTo(cx-nutW/2+nutW*f,nutY+nutH);ctx.stroke();});
+    // Filetage (stries horizontales sur le corps)
+    ctx.strokeStyle='rgba(90,90,90,.35)';ctx.lineWidth=.35;
+    const threadStart=topOut?nutY+nutH:py,threadEnd=topOut?py+ch:nutY;
+    for(let ty=threadStart+1.5;ty<threadEnd-1;ty+=(threadEnd-threadStart)*0.18){
+      ctx.beginPath();ctx.moveTo(px2+1,ty);ctx.lineTo(px2+cw-1,ty);ctx.stroke();
+    }
+    // Orifice câble (côté extérieur)
+    const holeR=cw*.3,holeCY=topOut?py+holeR*.9:py+ch-holeR*.9;
+    ctx.fillStyle='#1A1A1A';ctx.beginPath();ctx.arc(cx,holeCY,holeR,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#555';ctx.lineWidth=.4;ctx.beginPath();ctx.arc(cx,holeCY,holeR,0,Math.PI*2);ctx.stroke();
+    // Anneau interne câble
+    ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.arc(cx,holeCY,holeR*.5,0,Math.PI*2);ctx.stroke();
+    // Label
+    if(cw>7){
+      const fs=Math.max(5,Math.round(cw*.38));
       ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#fff';ctx.textAlign='center';
-      ctx.fillText(p.label||'PE',cx,py-2);
-      ctx.font=`${fs*.85}px system-ui`;ctx.fillStyle='#DDD';
-      ctx.fillText(`ISO${c.isoD}`,cx,cy+r+10);
+      ctx.strokeStyle='rgba(0,0,0,.5)';ctx.lineWidth=1.5;
+      ctx.strokeText(p.label||'PE',cx,py+ch*.58+fs*.35);
+      ctx.fillText(p.label||'PE',cx,py+ch*.58+fs*.35);
     }
   } else if(c.type==='bornier'){
     ctx.fillStyle='#FEFAF0';ctx.strokeStyle=c.color;ctx.lineWidth=Math.max(.5,cw*.07);
