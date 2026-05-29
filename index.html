@@ -901,7 +901,7 @@ function drawEye(ctx,cx,cy,active){
 // VUE PLAN (COUPE A-A) — section horizontale
 // ═══════════════════════════════════════════════════════════════════════
 function drawPlanView(layout){
-  planViewMeta=null; // reset avant de recalculer
+  planViewMeta=null;PLAN_COTE_HITS.length=0; // reset
   const{m,w,h,intX,intW,zones}=layout;
   const cutY=Math.max(-CUT_EXT,Math.min(cutLineY||h/2,h+CUT_EXT));
   const isAbove=cutY<0,isBelow=cutY>h;
@@ -977,6 +977,9 @@ function drawPlanView(layout){
       ctx.beginPath();ctx.moveTo(cX-3,hY);ctx.lineTo(cX+3,hY);ctx.stroke();
       ctx.save();ctx.translate(cX+11,(OZ+hY)/2);ctx.rotate(Math.PI/2);
       ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`gorge ${Math.round(goulD)}mm`,0,0);ctx.restore();
+      // Cote gorge cliquable
+      PLAN_COTE_HITS.push({x:cX+11,y:(OZ+hY)/2,r:20,val:goulD,min:10,max:thick-5,
+        onSubmit:v=>{ZONE_DEPTHS[zone.label]=Math.round(v);draw();}});
       planViewHandles.push({zoneLabel:zone.label,canvasY:hY,minD:10,maxD:thick-5,scZ,OZ});
     } else if(zone?.type==='rail'){
       const railD=getZD(zone);
@@ -1038,6 +1041,9 @@ function drawPlanView(layout){
       ctx.beginPath();ctx.moveTo(cX3-3,sectionEndY);ctx.lineTo(cX3+3,sectionEndY);ctx.stroke();
       ctx.save();ctx.translate(cX3+11,(OZ+sectionEndY)/2);ctx.rotate(Math.PI/2);
       ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(`prof. ${Math.round(railD)}mm`,0,0);ctx.restore();
+      // Cote profondeur rail cliquable
+      PLAN_COTE_HITS.push({x:cX3+11,y:(OZ+sectionEndY)/2,r:20,val:railD,min:RAIL_DIN_H+6,max:thick-5,
+        onSubmit:v=>{ZONE_DEPTHS[zone.label]=Math.round(v);draw();}});
 
       // ── Drag handles ──
       // Orange = profondeur totale section (bas)
@@ -1079,7 +1085,6 @@ function drawPlanView(layout){
       planViewHandles.push({type:'railZ',zoneLabel:zone.label,canvasY:rFaceY,minZ:2,maxZ:railD-RAIL_DIN_H-2,scZ,OZ});
     }
     planViewMeta={OZ,scZ,thick,isAbove,isBelow,cutY,handles:planViewHandles,w,flip,OX};
-    PLAN_COTE_HITS.length=0; // réinitialisé ici après calcul du planViewMeta
   }
 
   // ── Cotation épaisseur
@@ -1651,7 +1656,9 @@ function setupFaceCanvas(){
     }
     const layout0=getLayout();
     const onRail=!wm.active&&!dragging&&layout0.zones.some(z=>z.type==='rail'&&wx>=layout0.intX&&wx<=layout0.intX+layout0.intW&&wy>=z.y&&wy<z.y+z.h);
-    cv.style.cursor=Math.abs(my-cutPY)<8&&!wm.active?'ns-resize':onRail&&!hoveredComp?'ns-resize':wm.active?'crosshair':'default';
+    const px0=e.clientX-r.left,py0=e.clientY-r.top;
+    const onCote=FLAGS.cotes&&!wm.active&&COTE_HITS.some(c=>c.r>0&&Math.hypot(px0-c.x,py0-c.y)<c.r);
+    cv.style.cursor=Math.abs(my-cutPY)<8&&!wm.active?'ns-resize':onRail&&!hoveredComp?'ns-resize':wm.active?'crosshair':onCote?'text':'default';
     faceCursorWX=wx;
     const oldH=hoveredComp;
     hoveredComp=PLACED.find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH)||null;
@@ -1804,7 +1811,7 @@ function setupFaceCanvas(){
     }
     // Double-clic sur composant → renommer
     const idx=PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
-    if(idx>=0){const l=prompt('Étiquette :',PLACED[idx].label||'');if(l!==null){PLACED[idx].label=l;draw();updateWT();}}
+    if(idx>=0){const l=prompt('Étiquette :',PLACED[idx].label||'');if(l!==null){PLACED[idx].label=l;draw();updateWT();schedSave();}}
   });
   cv.addEventListener('contextmenu',e=>{
     e.preventDefault();
@@ -1815,7 +1822,7 @@ function setupFaceCanvas(){
     for(const w of WIRES){
       for(let i=1;i<w.pts.length-1;i++){
         const[mx,my2]=W2F(w.pts[i][0],w.pts[i][1]);
-        if(Math.hypot(px_-mx,py_-my2)<8){w.pts.splice(i,1);draw();updateWT();return;}
+        if(Math.hypot(px_-mx,py_-my2)<8){w.pts.splice(i,1);draw();updateWT();schedSave();return;}
       }
     }
     // Clic droit sur un fil → supprimer le fil entier
@@ -1825,7 +1832,7 @@ function setupFaceCanvas(){
         const[ax,ay]=W2F(w.pts[i][0],w.pts[i][1]);
         const[bx,by]=W2F(w.pts[i+1][0],w.pts[i+1][1]);
         if(ptSegDist(px_,py_,ax,ay,bx,by)<6){
-          if(confirm(`Supprimer le fil ${w.id} ?`)){WIRES.splice(wi,1);draw();updateWT();}
+          if(confirm(`Supprimer le fil ${w.id} ?`)){WIRES.splice(wi,1);draw();updateWT();schedSave();}
           return;
         }
       }
@@ -1849,10 +1856,13 @@ function setupPlanCanvas(){
     const r=cv.getBoundingClientRect();
     const my=e.clientY-r.top;
     // Hover poignées gorge
+    const mx0=e.clientX-r.left;
     if(planViewMeta&&planViewMeta.handles&&planViewMeta.handles.length){
       const near=planViewMeta.handles.find(h=>Math.abs(my-h.canvasY)<7);
       if(near){cv.style.cursor='ns-resize';return;}
     }
+    // Hover cotes cliquables coupe
+    if(FLAGS.cotes&&PLAN_COTE_HITS.some(c=>Math.hypot(mx0-c.x,my-c.y)<c.r)){cv.style.cursor='text';return;}
     // Hover composants dans coupe
     const layout=getLayout();const{w,h,zones}=layout;
     const mx=e.clientX-r.left;
