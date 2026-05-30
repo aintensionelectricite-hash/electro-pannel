@@ -351,7 +351,9 @@ function getConnPts(p){
 }
 
 function nearestConnPt(wx,wy,excludeP,collectionOverride){
-  const th=18;let best=null,bd=Infinity;
+  // Seuil adaptatif : 20px écran (plus facile à clicker en dezoom)
+  const th=Math.max(12,Math.round(20/(getSc()*faceZoom)));
+  let best=null,bd=Infinity;
   const coll=collectionOverride||[...PLACED,...(doorVisible?DOOR_PLACED:[])];
   coll.forEach(p=>{
     if(p===excludeP)return;
