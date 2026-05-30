@@ -121,6 +121,10 @@ function draw(){
   ctx.clearRect(0,0,FW,FH);
   function sx(v){return 58+facePanX+v*sc}function sy(v){return 34+facePanY+v*sc}function sw(v){return v*sc}
 
+  // ── Titre Vue de face
+  ctx.font='bold 9px system-ui';ctx.fillStyle='#888';ctx.textAlign='left';
+  ctx.fillText(`VUE DE FACE — ${w}×${h} mm`,8,12);
+
   // ── Fond
   const fg=ctx.createLinearGradient(sx(0),sy(0),sx(w),sy(h));
   fg.addColorStop(0,'#E8F2FC');fg.addColorStop(1,'#D2E6F6');
@@ -265,7 +269,7 @@ function draw(){
       ctx.fillStyle='rgba(255,140,0,.8)';ctx.strokeStyle='#fff';ctx.lineWidth=1;
       ctx.beginPath();ctx.arc(connX,vcy,4,0,Math.PI*2);ctx.fill();ctx.stroke();
       // Stocker la position monde de ce voyant pour le câblage
-      p._faceWX=(connX-58)/sc;p._faceWY=(vcy-34)/sc;
+      p._faceWX=(connX-58-facePanX)/sc;p._faceWY=(vcy-34-facePanY)/sc;
     });
   }
 }

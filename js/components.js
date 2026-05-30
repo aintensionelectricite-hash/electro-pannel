@@ -276,25 +276,75 @@ function drawComp(ctx,p,sc){
       ctx.fillText(p.label||'B?',px2+cw/2,py+ch*.27);
     }
   } else {
-    ctx.fillStyle=c.color+'1A';ctx.strokeStyle=c.color;ctx.lineWidth=.9;
+    // Corps gris (comme un vrai disjoncteur)
+    const bodyGrad=ctx.createLinearGradient(px2,py,px2+cw,py);
+    bodyGrad.addColorStop(0,'#E0E0E0');bodyGrad.addColorStop(.5,'#F5F5F5');bodyGrad.addColorStop(1,'#D5D5D5');
+    ctx.fillStyle=bodyGrad;ctx.strokeStyle='#888';ctx.lineWidth=.8;
     rr(ctx,px2,py,cw,ch,3);ctx.fill();ctx.stroke();
+    // Bande couleur marque (gauche)
+    const stripeW=Math.max(2,cw*.08);
+    ctx.fillStyle=c.color;
+    rr(ctx,px2,py,stripeW,ch,3);ctx.fill();
     if(c.type==='disj'||c.type==='diff'||c.type==='sect'){
       const pw2=cw/c.poles;
+      // Séparateurs entre pôles
+      if(c.poles>1){
+        ctx.strokeStyle='#BBBBBB';ctx.lineWidth=.5;
+        for(let pi=1;pi<c.poles;pi++){
+          ctx.beginPath();ctx.moveTo(px2+pi*pw2,py+2);ctx.lineTo(px2+pi*pw2,py+ch-2);ctx.stroke();
+        }
+      }
+      // Ampérage extrait du nom
+      const amps=(c.name.match(/(\d+)\s*A/)||[])[1]||'';
       for(let pi=0;pi<c.poles;pi++){
         const ppx=px2+pi*pw2;
-        ctx.fillStyle='#D8D6D2';ctx.strokeStyle=c.color;ctx.lineWidth=.35;
-        rr(ctx,ppx+pw2*.15,py+ch*.07,pw2*.7,ch*.19,2);ctx.fill();ctx.stroke();
-        rr(ctx,ppx+pw2*.15,py+ch*.73,pw2*.7,ch*.19,2);ctx.fill();ctx.stroke();
-        if(c.type!=='sect'){
-          ctx.fillStyle=c.type==='diff'?'#B0E8D0':'#FAC0A8';
-          ctx.strokeStyle=c.type==='diff'?'#0F6E56':'#993C1D';ctx.lineWidth=.35;
-          rr(ctx,ppx+pw2*.2,py+ch*.36,pw2*.6,ch*.26,2);ctx.fill();ctx.stroke();
+        // Borne haute (métal)
+        const tg=ctx.createLinearGradient(ppx+pw2*.15,py+ch*.05,ppx+pw2*.85,py+ch*.22);
+        tg.addColorStop(0,'#C0C0C0');tg.addColorStop(.5,'#F0F0F0');tg.addColorStop(1,'#A0A0A0');
+        ctx.fillStyle=tg;ctx.strokeStyle='#888';ctx.lineWidth=.5;
+        rr(ctx,ppx+pw2*.15,py+ch*.05,pw2*.7,ch*.17,2);ctx.fill();ctx.stroke();
+        // Vis borne haute
+        if(pw2>8){
+          ctx.fillStyle='#787878';ctx.beginPath();ctx.arc(ppx+pw2*.5,py+ch*.13,Math.max(1,pw2*.1),0,Math.PI*2);ctx.fill();
+          ctx.strokeStyle='#505050';ctx.lineWidth=.5;ctx.beginPath();
+          ctx.moveTo(ppx+pw2*.5-pw2*.06,py+ch*.13);ctx.lineTo(ppx+pw2*.5+pw2*.06,py+ch*.13);ctx.stroke();
         }
-        if(c.type==='disj'){ctx.fillStyle='#185FA5';ctx.beginPath();ctx.arc(ppx+pw2/2,py+ch*.49,Math.max(1.5,pw2*.11),0,Math.PI*2);ctx.fill();}
+        // Borne basse (métal)
+        ctx.fillStyle=tg;ctx.strokeStyle='#888';ctx.lineWidth=.5;
+        rr(ctx,ppx+pw2*.15,py+ch*.78,pw2*.7,ch*.17,2);ctx.fill();ctx.stroke();
+        if(pw2>8){
+          ctx.fillStyle='#787878';ctx.beginPath();ctx.arc(ppx+pw2*.5,py+ch*.87,Math.max(1,pw2*.1),0,Math.PI*2);ctx.fill();
+          ctx.strokeStyle='#505050';ctx.lineWidth=.5;ctx.beginPath();
+          ctx.moveTo(ppx+pw2*.5-pw2*.06,py+ch*.87);ctx.lineTo(ppx+pw2*.5+pw2*.06,py+ch*.87);ctx.stroke();
+        }
+        // Levier basculeur (rocker)
+        const hg=ctx.createLinearGradient(ppx+pw2*.18,py+ch*.26,ppx+pw2*.82,py+ch*.71);
+        hg.addColorStop(0,'#555');hg.addColorStop(.45,'#888');hg.addColorStop(1,'#444');
+        ctx.fillStyle=hg;ctx.strokeStyle='#333';ctx.lineWidth=.5;
+        rr(ctx,ppx+pw2*.18,py+ch*.26,pw2*.64,ch*.45,3);ctx.fill();ctx.stroke();
+        // Position I (haut du levier)
+        if(ch>.22){
+          const hPos=py+ch*.32;
+          ctx.fillStyle='rgba(255,255,255,.7)';
+          rr(ctx,ppx+pw2*.25,hPos,pw2*.5,ch*.1,2);ctx.fill();
+          if(pw2>10){ctx.font='bold '+(Math.max(5,Math.round(pw2*.45)))+'px system-ui';ctx.fillStyle='rgba(255,255,255,.9)';ctx.textAlign='center';ctx.fillText('I',ppx+pw2*.5,hPos+ch*.07);}
+        }
+        // Indicateur différentiel (bouton TEST vert)
+        if(c.type==='diff'&&pi===0){
+          ctx.fillStyle='#00B060';ctx.strokeStyle='#007040';ctx.lineWidth=.5;
+          rr(ctx,ppx+pw2*.25,py+ch*.73,Math.min(pw2*.5,25),ch*.04,2);ctx.fill();ctx.stroke();
+          if(pw2>14){ctx.font='500 '+(Math.max(4,Math.round(pw2*.22)))+'px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText('TEST',ppx+pw2*.5,py+ch*.755);}
+        }
       }
-      const fs=Math.max(6,Math.round(Math.min(cw,54)*.11));
-      ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle=c.color;ctx.textAlign='center';
-      ctx.fillText(p.label||c.name,px2+cw/2,py+ch-4);
+      // Etiquette : ampérage + repère
+      const fs=Math.max(5,Math.round(Math.min(cw,54)*.11));
+      ctx.textAlign='center';
+      if(amps&&cw>18){
+        ctx.font=`bold ${Math.max(6,fs+1)}px system-ui`;ctx.fillStyle='#1A1A1A';
+        ctx.fillText(amps+'A',px2+cw/2,py+ch*.245);
+      }
+      ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle='#333';
+      ctx.fillText(p.label||'—',px2+cw/2,py+ch-3);
     } else if(c.type==='peigne'){
       ctx.fillStyle='#F0997B';ctx.strokeStyle='#993C1D';ctx.lineWidth=.5;
       rr(ctx,px2,py,cw,ch,1);ctx.fill();ctx.stroke();
