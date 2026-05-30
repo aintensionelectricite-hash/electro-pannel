@@ -26,7 +26,7 @@ let cutDragging=false;
 const EXTRA_CUTS=[];           // [{id,y,dir,label}] coupes secondaires
 let extraCutNext=2;            // prochain id de coupe extra
 let cutDragId=null;            // id coupe extra en cours de drag
-let hoveredComp=null,selectedComp=null,clipboard=null;
+let hoveredComp=null,selectedComp=null,clipboard=null,wireClipboard=null;
 let dragging=null,dragOffX=0,dragOffY=0;
 let libGhost=null;
 let doorVisible=false;
@@ -1170,7 +1170,12 @@ document.addEventListener('keydown',e=>{
   if(e.ctrlKey&&e.key==='-'){e.preventDefault();setZoom(faceZoom/1.18);return;}
   // Raccourci W → mode fil
   if(e.key==='w'&&!e.ctrlKey&&document.activeElement===document.body){togWire();return;}
-  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&selectedComp)clipboard={comp:selectedComp.comp,label:selectedComp.label};
+  // Copier composant ou fil surligné
+  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&document.activeElement===document.body){
+    if(selectedComp)clipboard={comp:selectedComp.comp,label:selectedComp.label};
+    const hl=WIRES.find(w=>w.highlighted);
+    if(hl)wireClipboard={section:hl.section,color:hl.color,wtype:hl.wtype,startP:hl.startP,startPtId:hl.startPtId,endP:hl.endP,endPtId:hl.endPtId,pts:hl.pts.map(p=>[...p])};
+  }
   if(e.ctrlKey&&e.key.toLowerCase()==='v'&&clipboard){
     const layout=getLayout();
     const ref=selectedComp||PLACED.filter(p=>p.comp===clipboard.comp).slice(-1)[0];
@@ -1178,6 +1183,11 @@ document.addEventListener('keydown',e=>{
     const by=ref?ref.wy:layout.zones.find(z=>z.type==='rail')?.y||100;
     const{wx,wy,noSpace,rail,band}=applySnap(bx,by,clipboard.comp,layout);
     if(!noSpace){const np={comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null};PLACED.push(np);selectedComp=np;draw();updateWT();schedSave();}
+  }
+  // Ctrl+V sur fil copié → coller un fil parallèle (même connexions, pts décalés)
+  if(e.ctrlKey&&e.key.toLowerCase()==='v'&&wireClipboard&&!clipboard&&document.activeElement===document.body){
+    const w2={...wireClipboard,id:`W${++wireCount}`,pts:wireClipboard.pts.map(([x,y])=>[x+5,y+5]),highlighted:false};
+    WIRES.push(w2);draw();updateWT();schedSave();return;
   }
   // Ctrl+D : dupliquer le composant sélectionné
   if(e.ctrlKey&&e.key.toLowerCase()==='d'&&selectedComp&&document.activeElement===document.body){
