@@ -739,6 +739,15 @@ function setupFaceCanvas(){
     const oldH=hoveredComp;
     hoveredComp=PLACED.find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH)||null;
     if(wm.active&&wm.startP){wm.prevX=wx;wm.prevY=wy;}
+    if(oldH!==hoveredComp){
+      // Info-bar hover rapide (sans cliquer)
+      if(hoveredComp&&!selectedComp){
+        const c=hoveredComp.comp,rl=hoveredComp.railRef;
+        const amps=(c.name.match(/(\d+)\s*A/)||[])[1];
+        const el=document.getElementById('info');
+        if(el)el.innerHTML=`<span style="color:#555">${hoveredComp.label||c.name}</span> &mdash; <b>${c.name}</b>${amps?` <b style="color:#185FA5">${amps}A</b>`:''} &middot; ${c.ref||c.sub} &middot; ${c.modW}×${c.modH}mm${rl?` &middot; <span style="color:#888">${rl.label}</span>`:''}`;
+      } else if(!selectedComp&&!doorSelected) updateInfo();
+    }
     if(oldH!==hoveredComp||(wm.active&&wm.startP))draw();else drawPlanView(getLayout());
   });
   cv.addEventListener('mouseleave',()=>{faceCursorWX=null;hoveredComp=null;drawPlanView(getLayout());});
@@ -1158,6 +1167,7 @@ function _captureState(){
     wires:WIRES.map(w=>({id:w.id,section:w.section,color:w.color,wtype:w.wtype,
       sLabel:w.startP?.label||null,sPtId:w.startPtId,eLabel:w.endP?.label||null,ePtId:w.endPtId,pts:w.pts})),
     railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
+    cutLineY,cutDir,extraCuts:EXTRA_CUTS.map(c=>({...c})),extraCutNext,
     wireCount,peCount,voyantCount
   });
 }
@@ -1189,6 +1199,9 @@ function _applyState(s){
   Object.assign(RAIL_OFFSETS,d.railOffsets||{});
   Object.assign(ZONE_DEPTHS,d.zoneDepths||{});
   Object.assign(RAIL_FRONT_Z,d.railFrontZ||{});
+  cutLineY=d.cutLineY??null;cutDir=d.cutDir??1;
+  EXTRA_CUTS.length=0;(d.extraCuts||[]).forEach(c=>EXTRA_CUTS.push({...c}));
+  extraCutNext=d.extraCutNext||2;
   wireCount=d.wireCount||0;peCount=d.peCount||0;voyantCount=d.voyantCount||0;
   const all=[...PLACED,...DOOR_PLACED];WIRES.length=0;
   (d.wires||[]).forEach(w=>{
