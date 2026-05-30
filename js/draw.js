@@ -337,10 +337,15 @@ function drawCutLine(ctx,sx,sy,sw,w,h,sc,layout){
     ctx.fillText('×',btnX,btnY+2.5);
   });
 
-  // ── Bandeau semi-transparent signalant la coupe (visible même sans zoomer)
-  ctx.fillStyle='rgba(200,88,0,.07)';ctx.fillRect(x0,cy-3,x1-x0,6);
-  // Ligne pointillée ISO
-  ctx.strokeStyle='#C85800';ctx.lineWidth=1.8;ctx.setLineDash([10,4,2,4]);
+  // ── Trait de coupe A-A très visible (bande + ligne épaisse)
+  // Fond orange semi-transparent sur toute la largeur du canvas
+  ctx.fillStyle='rgba(200,88,0,.12)';
+  ctx.fillRect(0,cy-8,FW||1600,16);
+  // Hachures sur les goulottes GV (indique matière coupée)
+  ctx.fillStyle='rgba(200,88,0,.08)';
+  ctx.fillRect(sx(0),cy-6,sw(w),12);
+  // Ligne principale épaisse
+  ctx.strokeStyle='#C85800';ctx.lineWidth=2.5;ctx.setLineDash([12,4,3,4]);
   ctx.beginPath();ctx.moveTo(x0,cy);ctx.lineTo(x1,cy);ctx.stroke();ctx.setLineDash([]);
   // Flèches A — A
   function arrow(ax,ay,dir){
