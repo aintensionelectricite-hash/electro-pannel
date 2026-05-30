@@ -819,18 +819,31 @@ function setupFaceCanvas(){
         document.addEventListener('mousemove',onWPMove);document.addEventListener('mouseup',onWPUp);
         return;
       }
-      // 2. Clic sur un segment de fil → sélectionner ce fil (affiche les handles)
-      let segHit=null;
+      // 2. Clic sur un segment de fil → ajouter un point de dévoiement + drag immédiat
+      let segHit=null,segHitW=null,segHitI=-1;
       for(const w of WIRES){
         for(let i=0;i<w.pts.length-1;i++){
           const[ax,ay]=W2F(w.pts[i][0],w.pts[i][1]);
           const[bx,by]=W2F(w.pts[i+1][0],w.pts[i+1][1]);
-          if(ptSegDist(px_,py_,ax,ay,bx,by)<6){segHit=w;break;}
+          if(ptSegDist(px_,py_,ax,ay,bx,by)<10){segHit=w;segHitI=i;break;}
         }
-        if(segHit)break;
+        if(segHit){segHitW=segHit;break;}
       }
-      if(segHit){
-        WIRES.forEach(w2=>w2.highlighted=w2===segHit);
+      if(segHitW){
+        WIRES.forEach(w2=>w2.highlighted=w2===segHitW);
+        // Insérer un nouveau point à la position du clic
+        const t=ptSegT(px_,py_,...W2F(segHitW.pts[segHitI][0],segHitW.pts[segHitI][1]),...W2F(segHitW.pts[segHitI+1][0],segHitW.pts[segHitI+1][1]));
+        const newPt=[segHitW.pts[segHitI][0]+(segHitW.pts[segHitI+1][0]-segHitW.pts[segHitI][0])*t,
+                     segHitW.pts[segHitI][1]+(segHitW.pts[segHitI+1][1]-segHitW.pts[segHitI][1])*t];
+        segHitW.pts.splice(segHitI+1,0,newPt);
+        wireDragging={wire:segHitW,ptIdx:segHitI+1};
+        function onWPMv(ev){
+          const[wx2,wy2]=F2W(ev.clientX-r.left,ev.clientY-r.top);
+          wireDragging.wire.pts[wireDragging.ptIdx]=[wx2,wy2];
+          draw();updateWT();
+        }
+        function onWPUp2(){wireDragging=null;document.removeEventListener('mousemove',onWPMv);document.removeEventListener('mouseup',onWPUp2);draw();updateWT();schedSave();}
+        document.addEventListener('mousemove',onWPMv);document.addEventListener('mouseup',onWPUp2);
         draw();updateWT();return;
       }
     }

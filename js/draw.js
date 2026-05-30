@@ -631,8 +631,8 @@ function drawPlanView(layout){
     const ecH=Math.round(Math.max(ecThick,4)*ecSZ);
     const ecOZ=ecOffY+14;
     const ecFlip=ec.dir<0;
-    function epx(x){return OX+(ecFlip?(w-x):x)*scX}
-    function epw2(v){return v*scX}function epd(v){return v*ecSZ}
+    const epx=x=>OX+(ecFlip?(w-x):x)*scX;
+    const epw2=v=>v*scX;const epd=v=>v*ecSZ;
 
     // Séparateur + label
     ctx.strokeStyle='rgba(16,96,200,.3)';ctx.lineWidth=.5;ctx.setLineDash([4,3]);
