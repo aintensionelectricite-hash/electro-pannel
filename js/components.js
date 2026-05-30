@@ -353,7 +353,7 @@ function drawComp(ctx,p,sc){
     } else if(c.type==='repot'){
       // Répartiteur de potentiel monopotentiel
       const N=c.poles;
-      const stagPx=Math.min(sw(30),sw((N-1)*4)); // décalage total en pixels
+      const stagPx=Math.min(30*sc,(N-1)*4*sc); // décalage total en pixels
       const step=N>1?stagPx/(N-1):0;
       const pw2=cw/N;
       // ── Queues de sortie décalées (dessinées AVANT le corps pour rester derrière)
