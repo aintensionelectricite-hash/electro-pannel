@@ -1,7 +1,7 @@
 // electro-pannel — CAO armoire électrique Spacial S3D
 // Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
 // Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
-const EP_VERSION='v13';
+const EP_VERSION='v14';
 
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
@@ -136,6 +136,15 @@ function toggleWP(){
   el.classList.toggle('collapsed');
   const btn=el.querySelector('.panel-toggle');
   btn.textContent=el.classList.contains('collapsed')?'◀':'Filerie ▶';
+}
+
+// Notification toast non-bloquante
+function showToast(msg,ms=2500){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,.92);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;z-index:99999;pointer-events:none;transition:opacity .3s';
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),350);},ms);
 }
 
 // Input flottant pour éditer une étiquette (remplace prompt())
@@ -733,7 +742,7 @@ function startLibDrag(e,comp){
         const layout=getLayout();
         const[wx0,wy0]=F2W(px,py);
         const{wx,wy,onRail,noSpace,rail,band}=applySnap(wx0-comp.modW/2,wy0-comp.modH/2,comp,layout);
-        if(noSpace){alert('Plus de place.');}
+        if(noSpace){showToast('Plus de place sur ce rail',2000);}
         else{PLACED.push({comp,wx,wy,type:'comp',label:autoLabel(comp),railRef:rail||null,band:band||null});}
       }
     }
