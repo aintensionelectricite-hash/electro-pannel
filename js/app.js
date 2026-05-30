@@ -1,7 +1,7 @@
 // electro-pannel — CAO armoire électrique Spacial S3D
 // Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
 // Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
-const EP_VERSION='v18';
+const EP_VERSION='v19';
 
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
@@ -1194,16 +1194,16 @@ function setupDoorCanvas(){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0,waypoints:[]};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
   // Undo / Redo
-  if(e.ctrlKey&&e.key.toLowerCase()==='z'&&!e.shiftKey&&document.activeElement===document.body){e.preventDefault();undo();return;}
-  if(e.ctrlKey&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&document.activeElement===document.body){e.preventDefault();redo();return;}
+  if(e.ctrlKey&&e.key.toLowerCase()==='z'&&!e.shiftKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();undo();return;}
+  if(e.ctrlKey&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();redo();return;}
   // Zoom clavier Ctrl+0 (reset), Ctrl+= (in), Ctrl+- (out)
   if(e.ctrlKey&&(e.key==='0'||e.key==='Numpad0')){e.preventDefault();zoomFit();return;}
   if(e.ctrlKey&&(e.key==='='||e.key==='+')){e.preventDefault();setZoom(faceZoom*1.18);return;}
   if(e.ctrlKey&&e.key==='-'){e.preventDefault();setZoom(faceZoom/1.18);return;}
   // Raccourci W → mode fil
-  if(e.key==='w'&&!e.ctrlKey&&document.activeElement===document.body){togWire();return;}
+  if(e.key==='w'&&!e.ctrlKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){togWire();return;}
   // Copier composant ou fil surligné
-  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&document.activeElement===document.body){
+  if(e.ctrlKey&&e.key.toLowerCase()==='c'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
     if(selectedComp)clipboard={comp:selectedComp.comp,label:selectedComp.label};
     const hl=WIRES.find(w=>w.highlighted);
     if(hl)wireClipboard={section:hl.section,color:hl.color,wtype:hl.wtype,startP:hl.startP,startPtId:hl.startPtId,endP:hl.endP,endPtId:hl.endPtId,pts:hl.pts.map(p=>[...p])};
@@ -1217,12 +1217,12 @@ document.addEventListener('keydown',e=>{
     if(!noSpace){const np={comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null};PLACED.push(np);selectedComp=np;draw();updateWT();schedSave();}
   }
   // Ctrl+V sur fil copié → coller un fil parallèle (même connexions, pts décalés)
-  if(e.ctrlKey&&e.key.toLowerCase()==='v'&&wireClipboard&&!clipboard&&document.activeElement===document.body){
+  if(e.ctrlKey&&e.key.toLowerCase()==='v'&&wireClipboard&&!clipboard&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
     const w2={...wireClipboard,id:`W${++wireCount}`,pts:wireClipboard.pts.map(([x,y])=>[x+5,y+5]),highlighted:false};
     WIRES.push(w2);draw();updateWT();schedSave();return;
   }
   // Ctrl+D : dupliquer le composant sélectionné
-  if(e.ctrlKey&&e.key.toLowerCase()==='d'&&selectedComp&&document.activeElement===document.body){
+  if(e.ctrlKey&&e.key.toLowerCase()==='d'&&selectedComp&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
     e.preventDefault();
     clipboard={comp:selectedComp.comp,label:selectedComp.label};
     const layout=getLayout();
@@ -1232,7 +1232,7 @@ document.addEventListener('keydown',e=>{
     if(!noSpace){const np={comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null};PLACED.push(np);selectedComp=np;draw();updateWT();schedSave();}
     return;
   }
-  if((e.key==='Delete'||e.key==='Backspace')&&selectedComp&&document.activeElement===document.body){
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedComp&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
     const idx=PLACED.indexOf(selectedComp);
     if(idx>=0){
       PLACED.splice(idx,1);

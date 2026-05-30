@@ -129,6 +129,9 @@ setupResize('rh-lib','lib','left',80,320);
 setupResize('rh-wp','wp','right',160,500);
 // Affichage version
 const _ver=document.getElementById('_ver_lbl');if(_ver&&typeof EP_VERSION!=='undefined')_ver.textContent=EP_VERSION;
+// Assurer que les panneaux latéraux sont ouverts au démarrage
+document.getElementById('wp').classList.remove('collapsed');
+document.getElementById('lib').classList.remove('collapsed');
 const _restored=loadSession();
 snapshot(); // état initial dans l'historique undo
 setView('all'); // initialise l'affichage de tous les canvas (cv-top/bot/plan)
