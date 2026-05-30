@@ -58,6 +58,26 @@ function setZoom(z,resetPan){
   draw();
 }
 
+// Ajuster zoom pour voir toute l'armoire
+function zoomFit(){
+  const area=document.getElementById('views-area');
+  if(!area)return;
+  const{w,h}=MODELS[document.getElementById('sel-model').value];
+  const sc0=getSc(); // scale de base (zoom=1)
+  const availW=area.clientWidth-30,availH=area.clientHeight-30;
+  const canW=w*sc0+130,canH=h*sc0+100;
+  const fitZ=Math.min(availW/canW,availH/canH,2);
+  setZoom(Math.max(0.25,fitZ),true);
+}
+
+// Compteur composants/fils dans le titre
+function updateStats(){
+  const el=document.getElementById('_stats_lbl');
+  if(!el)return;
+  const nc=PLACED.length+DOOR_PLACED.length,nw=WIRES.length;
+  el.textContent=nc?`${nc} comp. · ${nw} fil${nw!==1?'s':''}`:''
+;}
+
 // Nomenclature / BOM
 function exportBOM(){
   const counts={};
@@ -1031,7 +1051,7 @@ document.addEventListener('keydown',e=>{
   if(e.ctrlKey&&e.key.toLowerCase()==='z'&&!e.shiftKey&&document.activeElement===document.body){e.preventDefault();undo();return;}
   if(e.ctrlKey&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&document.activeElement===document.body){e.preventDefault();redo();return;}
   // Zoom clavier Ctrl+0 (reset), Ctrl+= (in), Ctrl+- (out)
-  if(e.ctrlKey&&(e.key==='0'||e.key==='Numpad0')){e.preventDefault();setZoom(1,true);return;}
+  if(e.ctrlKey&&(e.key==='0'||e.key==='Numpad0')){e.preventDefault();zoomFit();return;}
   if(e.ctrlKey&&(e.key==='='||e.key==='+')){e.preventDefault();setZoom(faceZoom*1.18);return;}
   if(e.ctrlKey&&e.key==='-'){e.preventDefault();setZoom(faceZoom/1.18);return;}
   // Raccourci W → mode fil
@@ -1043,7 +1063,7 @@ document.addEventListener('keydown',e=>{
     const bx=ref?ref.wx+ref.comp.modW+1:layout.intX;
     const by=ref?ref.wy:layout.zones.find(z=>z.type==='rail')?.y||100;
     const{wx,wy,noSpace,rail,band}=applySnap(bx,by,clipboard.comp,layout);
-    if(!noSpace){PLACED.push({comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null});draw();updateWT();}
+    if(!noSpace){PLACED.push({comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null});draw();updateWT();schedSave();}
   }
   if((e.key==='Delete'||e.key==='Backspace')&&selectedComp&&document.activeElement===document.body){
     const idx=PLACED.indexOf(selectedComp);

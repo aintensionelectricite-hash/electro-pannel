@@ -109,6 +109,7 @@ function drawPosCotes(ctx,sx,sy,sw,p,layout,sc){
 // DESSIN PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════
 function draw(){
+  if(typeof updateStats==='function')updateStats();
   const layout=getLayout();
   const{intX,intW,zones,m,w,h}=layout;
   const sc=getSc()*faceZoom;  // échelle avec zoom appliqué
@@ -171,6 +172,25 @@ function draw(){
 
   // ── Composants fond
   PLACED.forEach(p=>{if(p.type==='comp')drawComp(ctx,p,sc);});
+
+  // ── Indicateur capacité rail (espace utilisé / disponible)
+  if(FLAGS.cotes){
+    zones.filter(z=>z.type==='rail').forEach(z=>{
+      const peers=PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===z.label);
+      const used=peers.reduce((s,p)=>s+p.comp.modW,0);
+      const avail=Math.round(intW-used);
+      const pct=Math.round(used/intW*100);
+      const barW=Math.max(20,sw(Math.min(used,intW)));
+      const barX=sx(intX),barY=sy(z.y+z.h)-3;
+      const barH=3;
+      ctx.fillStyle='rgba(0,0,0,.08)';ctx.fillRect(barX,barY-barH,sw(intW),barH);
+      ctx.fillStyle=pct>90?'#C00':pct>70?'#E07000':'#1D9E75';
+      ctx.fillRect(barX,barY-barH,barW,barH);
+      const fs=Math.max(7,Math.round(sc*12));
+      ctx.font=`500 ${fs}px system-ui`;ctx.fillStyle='#666';ctx.textAlign='right';
+      ctx.fillText(`${Math.round(used)}/${Math.round(intW)} mm — libre: ${avail} mm`,sx(intX+intW)-2,barY-5);
+    });
+  }
 
   // ── Fils (dessinés APRÈS les composants pour toujours être visibles)
   ctx.save();

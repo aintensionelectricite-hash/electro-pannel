@@ -12,6 +12,7 @@
   <h1>CAO Armoire Électrique — Spacial S3D</h1>
   <div style="display:flex;gap:10px;align-items:center">
   <span id="_save_lbl" style="font-size:9px;color:#AAA"></span>
+  <span id="_stats_lbl" style="font-size:9px;color:#888;background:#F0F0EC;border-radius:4px;padding:1px 5px"></span>
   <span id="_zoom_lbl" style="font-size:9px;color:#AAA;cursor:pointer" title="Ctrl+0 = réinitialiser zoom" onclick="faceZoom=1;document.getElementById('_zoom_lbl').textContent='100%';draw()">100%</span>
   <div style="display:flex;gap:6px;font-size:9.5px;color:#888;align-items:center">
     <span style="display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FAECE7;border:1px solid #D85A30"></span>Goulotte</span>
@@ -74,7 +75,7 @@
     oninput="setZoom(this.value/100)">
   <button class="tbtn" style="padding:2px 7px;font-size:13px;line-height:1" onclick="setZoom(faceZoom*1.18)" title="Zoomer (Ctrl+=)">+</button>
   <span id="zoom-pct" style="font-size:10px;font-weight:600;color:#185FA5;min-width:34px;text-align:right">100%</span>
-  <button class="tbtn" style="padding:2px 8px;font-size:10px" onclick="setZoom(1,true)" title="Réinitialiser zoom et position (Ctrl+0)">Ajuster</button>
+  <button class="tbtn" style="padding:2px 8px;font-size:10px" onclick="zoomFit()" title="Ajuster zoom pour voir toute l'armoire (Ctrl+0)">Ajuster</button>
 </div>
 </div>
 <div id="main">
