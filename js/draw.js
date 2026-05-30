@@ -172,6 +172,8 @@ function draw(){
 
   // ── Composants fond
   PLACED.forEach(p=>{if(p.type==='comp')drawComp(ctx,p,sc);});
+  // Composant en cours de drag (retiré de PLACED temporairement → affiché semi-transparent)
+  if(dragging){ctx.globalAlpha=.65;drawComp(ctx,dragging,sc);ctx.globalAlpha=1;}
 
   // ── Indicateur capacité rail (espace utilisé / disponible)
   if(FLAGS.cotes){
