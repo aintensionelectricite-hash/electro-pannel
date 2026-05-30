@@ -18,6 +18,9 @@ let faceZoom=1.0;            // zoom vue face (molette souris)
 let facePanX=0,facePanY=0;  // décalage pan (clic molette ou Alt+drag)
 let cutLineY=null,cutDir=1;  // cutDir +1=vers droite, -1=vers gauche
 let cutDragging=false;
+const EXTRA_CUTS=[];           // [{id,y,dir,label}] coupes secondaires
+let extraCutNext=2;            // prochain id de coupe extra
+let cutDragId=null;            // id coupe extra en cours de drag
 let hoveredComp=null,selectedComp=null,clipboard=null;
 let dragging=null,dragOffX=0,dragOffY=0;
 let libGhost=null;
@@ -191,9 +194,9 @@ function updateInfo(){
   const el=document.getElementById('info');
   if(wm.active&&!wm.startP){el.innerHTML='<b style="color:#A06000">⚡ Mode fil</b> — Cliquer un point <span style="color:#FF8C00">⬤</span> de départ sur un composant &nbsp;<span style="color:#BBB">· Échap : annuler</span>';return;}
   if(wm.active&&wm.startP){el.innerHTML='<b style="color:#A06000">⚡ Fil en cours</b> — Cliquer le point <span style="color:#FF8C00">⬤</span> d\'arrivée &nbsp;<span style="color:#BBB">· Échap : annuler · Clic vide : annuler départ</span>';return;}
-  if(selectedComp){const c=selectedComp.comp,rl=selectedComp.railRef;el.innerHTML=`<b style="color:#185FA5">${selectedComp.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm${rl?` &middot; ${rl.label}`:''}  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Supr: supprimer &middot; Ctrl+C: copier</span>`;}
-  else if(doorSelected){const c=doorSelected.comp;el.innerHTML=`<b style="color:#6B3DA6">${doorSelected.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}&times;${c.modH} mm  <span style="color:#BBB;margin-left:10px">Dbl-clic: renommer &middot; Clic droit: supprimer</span>`;}
-  else{el.textContent='Cliquer-glisser pour déplacer · Dbl-clic étiquette · Clic droit supprimer · Fil : cliquer point ⬤ départ puis arrivée · Échap annuler · Ctrl+C/V copier · Supr supprimer';}
+  if(selectedComp){const c=selectedComp.comp,rl=selectedComp.railRef;const amps=(c.name.match(/(\d+)\s*A/)||[])[1];el.innerHTML=`<b style="color:#185FA5">${selectedComp.label||c.name}</b> &mdash; ${c.name}${amps?` <b>${amps}A</b>`:''}  &middot; Réf: ${c.ref||c.sub}  &middot; ${c.modW}×${c.modH}mm${rl?` &middot; ${rl.label}`:''}  <span style="color:#BBB;margin-left:8px">Dbl-clic renommer · Ctrl+C copier · Ctrl+D dupliquer · Supr supprimer</span>`;}
+  else if(doorSelected){const c=doorSelected.comp;el.innerHTML=`<b style="color:#6B3DA6">${doorSelected.label||c.name}</b> &mdash; ${c.name} &middot; ${c.sub} &middot; ${c.modW}×${c.modH}mm  <span style="color:#BBB;margin-left:8px">Dbl-clic renommer · Clic droit supprimer</span>`;}
+  else{el.innerHTML='Glisser-déposer composants · Clic droit supprimer · <b>W</b> = mode fil · Dbl-clic sur fil = ajouter point · Ctrl+C/D/V = copier/dupliquer/coller · Ctrl+Z/Y = annuler/rétablir';}
 }
 function togWire(){
   wm={active:!wm.active,startP:null,startPtId:null,prevX:0,prevY:0};
@@ -206,9 +209,21 @@ function togDoor(){
   setView(currentView);
   draw();updateInfo();
 }
+function addExtraCut(){
+  const{h}=MODELS[document.getElementById('sel-model').value];
+  const letters='BCDEFGHIJ';
+  const label=(letters[EXTRA_CUTS.length]||String(extraCutNext))+'-'+(letters[EXTRA_CUTS.length]||String(extraCutNext));
+  EXTRA_CUTS.push({id:extraCutNext++,y:h*(0.4+EXTRA_CUTS.length*0.15),dir:1,label});
+  draw();schedSave();
+}
+function removeExtraCut(id){
+  const i=EXTRA_CUTS.findIndex(c=>c.id===id);
+  if(i>=0){EXTRA_CUTS.splice(i,1);draw();schedSave();}
+}
+
 function clearAll(){
   if(!confirm('Vider tout ?'))return;
-  PLACED.length=0;DOOR_PLACED.length=0;WIRES.length=0;
+  PLACED.length=0;DOOR_PLACED.length=0;WIRES.length=0;EXTRA_CUTS.length=0;extraCutNext=2;
   wireCount=peCount=voyantCount=0;selectedComp=null;doorSelected=null;
   for(const k in RAIL_OFFSETS)delete RAIL_OFFSETS[k];
   for(const k in ZONE_DEPTHS)delete ZONE_DEPTHS[k];
@@ -540,6 +555,7 @@ async function exportHTML(){
     thickness:document.getElementById('thickness').value,
     doorGap:document.getElementById('door-gap')?.value||500,
     doorVisible,cutLineY,cutDir,wireCount,peCount,voyantCount,
+    extraCuts:EXTRA_CUTS.map(c=>({...c})),extraCutNext,
     railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
     placed:PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label,railLabel:p.railRef?.label||null,band:p.band||null})),
     doorPlaced:DOOR_PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label})),
@@ -708,11 +724,17 @@ function setupFaceCanvas(){
     if(cutDragging){
       cutLineY=wy;draw();return;
     }
+    if(cutDragId!==null){
+      const ec=EXTRA_CUTS.find(c=>c.id===cutDragId);
+      if(ec){ec.y=wy;draw();}return;
+    }
     const layout0=getLayout();
     const onRail=!wm.active&&!dragging&&layout0.zones.some(z=>z.type==='rail'&&wx>=layout0.intX&&wx<=layout0.intX+layout0.intW&&wy>=z.y&&wy<z.y+z.h);
     const px0=e.clientX-r.left,py0=e.clientY-r.top;
     const onCote=FLAGS.cotes&&!wm.active&&COTE_HITS.some(c=>c.r>0&&Math.hypot(px0-c.x,py0-c.y)<c.r);
-    cv.style.cursor=Math.abs(my-cutPY)<8&&!wm.active?'ns-resize':onRail&&!hoveredComp?'ns-resize':wm.active?'crosshair':onCote?'text':'default';
+    // Curseur ns-resize si survol d'un trait de coupe (principal ou secondaire)
+    const onAnyCut=EXTRA_CUTS.some(ec=>{const[,ey]=W2F(0,ec.y||0);return Math.abs(my-ey)<8;});
+    cv.style.cursor=Math.abs(my-cutPY)<8&&!wm.active?'ns-resize':onAnyCut&&!wm.active?'ns-resize':onRail&&!hoveredComp?'ns-resize':wm.active?'crosshair':onCote?'text':'default';
     faceCursorWX=wx;
     const oldH=hoveredComp;
     hoveredComp=PLACED.find(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH)||null;
@@ -809,7 +831,18 @@ function setupFaceCanvas(){
     if(Math.abs(my-cy)<10&&(Math.abs(e.clientX-r.left-x0)<14||Math.abs(e.clientX-r.left-x1)<14)){
       cutDir*=-1;draw();return;
     }
-    // Trait de coupe
+    // Coupes secondaires — drag ou suppression (× bouton)
+    if(!wm.active){
+      const sc2=getSc()*faceZoom,x1ec=58+facePanX+getLayout().w*sc2+18;
+      for(const ec of EXTRA_CUTS){
+        const[,ey]=W2F(0,ec.y||0);
+        // Clic sur bouton × (à droite)
+        if(Math.hypot(e.clientX-r.left-(x1ec+42),my-ey)<7){removeExtraCut(ec.id);return;}
+        // Drag du trait
+        if(Math.abs(my-ey)<8){cutDragId=ec.id;return;}
+      }
+    }
+    // Trait de coupe principal
     if(Math.abs(my-cutPY)<8&&!wm.active){cutDragging=true;return;}
     // Mode fil
     if(wm.active){
@@ -872,7 +905,10 @@ function setupFaceCanvas(){
     function onUp(){PLACED.splice(idx,0,hit);dragging=null;document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);draw();updateWT();schedSave();}
     document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
   });
-  document.addEventListener('mouseup',()=>{if(cutDragging){cutDragging=false;draw();}});
+  document.addEventListener('mouseup',()=>{
+    if(cutDragging){cutDragging=false;draw();schedSave();}
+    if(cutDragId!==null){cutDragId=null;draw();schedSave();}
+  });
   cv.addEventListener('dblclick',e=>{
     if(wm.active)return;
     const r=cv.getBoundingClientRect();
@@ -1063,7 +1099,18 @@ document.addEventListener('keydown',e=>{
     const bx=ref?ref.wx+ref.comp.modW+1:layout.intX;
     const by=ref?ref.wy:layout.zones.find(z=>z.type==='rail')?.y||100;
     const{wx,wy,noSpace,rail,band}=applySnap(bx,by,clipboard.comp,layout);
-    if(!noSpace){PLACED.push({comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null});draw();updateWT();schedSave();}
+    if(!noSpace){const np={comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null};PLACED.push(np);selectedComp=np;draw();updateWT();schedSave();}
+  }
+  // Ctrl+D : dupliquer le composant sélectionné
+  if(e.ctrlKey&&e.key.toLowerCase()==='d'&&selectedComp&&document.activeElement===document.body){
+    e.preventDefault();
+    clipboard={comp:selectedComp.comp,label:selectedComp.label};
+    const layout=getLayout();
+    const bx=selectedComp.wx+selectedComp.comp.modW+1;
+    const by=selectedComp.wy;
+    const{wx,wy,noSpace,rail,band}=applySnap(bx,by,clipboard.comp,layout);
+    if(!noSpace){const np={comp:clipboard.comp,wx,wy,type:'comp',label:autoLabel(clipboard.comp),railRef:rail||null,band:band||null};PLACED.push(np);selectedComp=np;draw();updateWT();schedSave();}
+    return;
   }
   if((e.key==='Delete'||e.key==='Backspace')&&selectedComp&&document.activeElement===document.body){
     const idx=PLACED.indexOf(selectedComp);
@@ -1176,6 +1223,7 @@ function saveSession(){
       thickness:document.getElementById('thickness').value,
       doorGap:document.getElementById('door-gap')?.value||500,
       doorVisible,cutLineY,cutDir,wireCount,peCount,voyantCount,
+      extraCuts:EXTRA_CUTS.map(c=>({...c})),extraCutNext,
       railOffsets:{...RAIL_OFFSETS},zoneDepths:{...ZONE_DEPTHS},railFrontZ:{...RAIL_FRONT_Z},
       placed:PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label,railLabel:p.railRef?.label||null,band:p.band||null})),
       doorPlaced:DOOR_PLACED.map(p=>({id:p.comp.id,wx:p.wx,wy:p.wy,label:p.label})),
@@ -1206,6 +1254,8 @@ function loadSession(){
     if(d.doorGap&&document.getElementById('door-gap'))document.getElementById('door-gap').value=d.doorGap;
     Object.assign(RAIL_OFFSETS,d.railOffsets||{});Object.assign(ZONE_DEPTHS,d.zoneDepths||{});Object.assign(RAIL_FRONT_Z,d.railFrontZ||{});
     cutLineY=d.cutLineY??null;cutDir=d.cutDir??1;
+    EXTRA_CUTS.length=0;(d.extraCuts||[]).forEach(c=>EXTRA_CUTS.push({...c}));
+    extraCutNext=d.extraCutNext||2;
     wireCount=d.wireCount||0;peCount=d.peCount||0;voyantCount=d.voyantCount||0;
     if(d.doorVisible){doorVisible=true;document.getElementById('btn-door').classList.add('door-on');}
     // Restituer composants
