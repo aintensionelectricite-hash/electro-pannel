@@ -200,18 +200,31 @@ function draw(){
   WIRES.forEach(wire=>drawWire(ctx,wire,sc,layout));
   ctx.restore();
 
-  // ── Preview fil en cours
+  // ── Preview fil en cours (polyline avec waypoints)
   if(wm.active&&wm.startP){
     const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
     if(sp){
       const sec=SEC(),minR=BEND_R[sec]||20;
-      const prev=routeWireStrict([sp.wx,sp.wy],[wm.prevX,wm.prevY],wm.startP,null,layout);
+      // Construire la preview : start → waypoints accumulés → curseur
+      let prevPts;
+      if((wm.waypoints||[]).length===0){
+        // Pas de waypoints → routage auto
+        prevPts=routeWireStrict([sp.wx,sp.wy],[wm.prevX,wm.prevY],wm.startP,null,layout);
+      } else {
+        prevPts=[[sp.wx,sp.wy],...wm.waypoints,[wm.prevX,wm.prevY]];
+      }
       ctx.strokeStyle='rgba(192,112,0,.55)';
       ctx.lineWidth=Math.max(1.5,wireR(sec)*sc*2);ctx.lineCap='round';ctx.lineJoin='round';
-      drawSpline(ctx,prev,minR,sc);ctx.stroke();ctx.lineCap='butt';
+      drawSpline(ctx,prevPts,minR,sc);ctx.stroke();ctx.lineCap='butt';
       // Point de départ accentué
       const[spx,spy]=W2F(sp.wx,sp.wy);
       ctx.fillStyle='#D06000';ctx.beginPath();ctx.arc(spx,spy,5,0,Math.PI*2);ctx.fill();
+      // Waypoints accumulés (cercles jaunes)
+      (wm.waypoints||[]).forEach(([wpx,wpy])=>{
+        const[px3,py3]=W2F(wpx,wpy);
+        ctx.fillStyle='rgba(255,180,0,.9)';ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(px3,py3,5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      });
     }
   }
 

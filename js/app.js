@@ -1,3 +1,8 @@
+// electro-pannel — CAO armoire électrique Spacial S3D
+// Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
+// Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
+const EP_VERSION='v13';
+
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
   '600x800': {w:600,h:800, m:30},
@@ -25,7 +30,7 @@ let hoveredComp=null,selectedComp=null,clipboard=null;
 let dragging=null,dragOffX=0,dragOffY=0;
 let libGhost=null;
 let doorVisible=false;
-let wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};
+let wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0,waypoints:[]};
 let doorDragging=null,doorDragOX=0,doorDragOY=0;
 let doorHovered=null,doorSelected=null;
 let faceCursorWX=null;
@@ -131,6 +136,33 @@ function toggleWP(){
   el.classList.toggle('collapsed');
   const btn=el.querySelector('.panel-toggle');
   btn.textContent=el.classList.contains('collapsed')?'◀':'Filerie ▶';
+}
+
+// Input flottant pour éditer une étiquette (remplace prompt())
+function showLabelInput(screenX,screenY,currentLabel,onSubmit){
+  const old=document.getElementById('_label_inp');if(old)old.remove();
+  const wrap=document.createElement('div');
+  wrap.id='_label_inp';
+  const lx=Math.min(screenX-60,window.innerWidth-200);
+  const ly=Math.max(4,screenY-28);
+  wrap.style.cssText=`position:fixed;left:${lx}px;top:${ly}px;z-index:9999;background:#fff;border:2.5px solid #185FA5;border-radius:9px;box-shadow:0 6px 24px rgba(0,0,0,.28);padding:5px 8px;display:flex;align-items:center;gap:6px`;
+  const lbl=document.createElement('span');lbl.style.cssText='font-size:9px;color:#888';lbl.textContent='Étiquette';
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=currentLabel||'';inp.maxLength=20;
+  inp.style.cssText='width:80px;font-size:13px;font-weight:600;border:none;outline:none;color:#185FA5;background:transparent';
+  const btn=document.createElement('button');
+  btn.textContent='✓';
+  btn.style.cssText='font-size:11px;font-weight:700;background:#185FA5;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer';
+  wrap.appendChild(lbl);wrap.appendChild(inp);wrap.appendChild(btn);
+  document.body.appendChild(wrap);
+  inp.focus();inp.select();
+  let closed=false;
+  function submit(){if(closed)return;closed=true;wrap.remove();document.removeEventListener('mousedown',onOut,true);onSubmit(inp.value.trim());}
+  function cancel(){if(closed)return;closed=true;wrap.remove();document.removeEventListener('mousedown',onOut,true);}
+  function onOut(e){if(!wrap.contains(e.target))cancel();}
+  setTimeout(()=>document.addEventListener('mousedown',onOut,true),50);
+  btn.addEventListener('click',e=>{e.stopPropagation();submit();});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}if(e.key==='Escape'){e.preventDefault();cancel();}e.stopPropagation();});
 }
 
 // Input flottant au clic sur une cotation
@@ -866,18 +898,35 @@ function setupFaceCanvas(){
     }
     // Trait de coupe principal
     if(Math.abs(my-cutPY)<8&&!wm.active){cutDragging=true;return;}
-    // Mode fil
+    // Mode fil — polyline : clic vide = ajouter waypoint, clic connexion = terminer
     if(wm.active){
       const nearest=nearestConnPt(wx,wy,wm.startP);
-      if(!nearest){if(wm.startP){wm.startP=null;wm.startPtId=null;draw();}return;}
-      if(!wm.startP){wm.startP=nearest.placed;wm.startPtId=nearest.pt.id;wm.prevX=wx;wm.prevY=wy;draw();return;}
+      if(!wm.startP){
+        // Premier clic : sélectionner le point de départ (obligatoirement une connexion)
+        if(!nearest)return;
+        wm.startP=nearest.placed;wm.startPtId=nearest.pt.id;wm.prevX=wx;wm.prevY=wy;
+        wm.waypoints=[];draw();return;
+      }
+      if(!nearest){
+        // Clic dans l'espace vide → ajouter un waypoint manuel
+        wm.waypoints.push([wx,wy]);wm.prevX=wx;wm.prevY=wy;draw();return;
+      }
+      // Clic sur un point de connexion → terminer le fil
       const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
       if(sp&&nearest.placed!==wm.startP){
-        const sec=SEC(),layout=getLayout();
-        const pts=routeWireStrict([sp.wx,sp.wy],[nearest.pt.wx,nearest.pt.wy],wm.startP,nearest.placed,layout,wm.startPtId,nearest.pt.id);
+        const sec=SEC();
+        const startPt=[sp.wx,sp.wy],endPt=[nearest.pt.wx,nearest.pt.wy];
+        // Si pas de waypoints manuels → route automatique via goulotte
+        // Sinon → polyline directe avec waypoints
+        let pts;
+        if(wm.waypoints.length===0){
+          pts=routeWireStrict(startPt,endPt,wm.startP,nearest.placed,getLayout(),wm.startPtId,nearest.pt.id);
+        } else {
+          pts=[startPt,...wm.waypoints,endPt];
+        }
         wireCount++;
         WIRES.push({id:`W${wireCount}`,section:sec,startP:wm.startP,startPtId:wm.startPtId,endP:nearest.placed,endPtId:nearest.pt.id,pts,highlighted:false});
-        wm.startP=null;wm.startPtId=null;draw();updateWT();schedSave();
+        wm.startP=null;wm.startPtId=null;wm.waypoints=[];draw();updateWT();schedSave();
       }
       return;
     }
@@ -952,7 +1001,11 @@ function setupFaceCanvas(){
     }
     // Double-clic sur composant → renommer
     const idx=PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
-    if(idx>=0){const l=prompt('Étiquette :',PLACED[idx].label||'');if(l!==null){PLACED[idx].label=l;draw();updateWT();schedSave();}}
+    if(idx>=0){
+      const r2=cv.getBoundingClientRect();
+      const[cpx,cpy]=W2F(PLACED[idx].wx+PLACED[idx].comp.modW/2,PLACED[idx].wy);
+      showLabelInput(r2.left+cpx,r2.top+cpy,PLACED[idx].label,l=>{if(l!==undefined){PLACED[idx].label=l;draw();updateWT();schedSave();}});
+    }
   });
   cv.addEventListener('contextmenu',e=>{
     e.preventDefault();
@@ -1089,7 +1142,10 @@ function setupDoorCanvas(){
     if(!doorVisible)return;
     const[wx,wy]=dCoords(e);
     const idx=DOOR_PLACED.findIndex(p=>p.type==='comp'&&wx>=p.wx&&wx<=p.wx+p.comp.modW&&wy>=p.wy&&wy<=p.wy+p.comp.modH);
-    if(idx>=0){const l=prompt('Étiquette :',DOOR_PLACED[idx].label||'');if(l!==null){DOOR_PLACED[idx].label=l;draw();updateInfo();}}
+    if(idx>=0){
+      const r2=cv.getBoundingClientRect();
+      showLabelInput(e.clientX,e.clientY,DOOR_PLACED[idx].label,l=>{if(l!==undefined){DOOR_PLACED[idx].label=l;draw();updateInfo();}});
+    }
   });
   cv.addEventListener('contextmenu',e=>{
     e.preventDefault();if(!doorVisible)return;
@@ -1104,7 +1160,7 @@ function setupDoorCanvas(){
 // CLAVIER
 // ═══════════════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
+  if(e.key==='Escape'){wm={active:false,startP:null,startPtId:null,prevX:0,prevY:0,waypoints:[]};selectedComp=null;doorSelected=null;document.getElementById('btn-fil').classList.remove('wire-on');draw();updateInfo();return;}
   // Undo / Redo
   if(e.ctrlKey&&e.key.toLowerCase()==='z'&&!e.shiftKey&&document.activeElement===document.body){e.preventDefault();undo();return;}
   if(e.ctrlKey&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))&&document.activeElement===document.body){e.preventDefault();redo();return;}

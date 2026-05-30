@@ -9,7 +9,7 @@
 <body>
 <div id="app">
 <div class="hdr">
-  <h1>CAO Armoire Électrique — Spacial S3D</h1>
+  <h1>CAO Armoire Électrique — Spacial S3D <span id="_ver_lbl" style="font-size:9px;font-weight:400;color:#AAA;margin-left:6px"></span></h1>
   <div style="display:flex;gap:10px;align-items:center">
   <span id="_save_lbl" style="font-size:9px;color:#AAA"></span>
   <span id="_stats_lbl" style="font-size:9px;color:#888;background:#F0F0EC;border-radius:4px;padding:1px 5px"></span>
@@ -121,6 +121,8 @@ setupPlanCanvas();
 setupDoorCanvas();
 setupResize('rh-lib','lib','left',80,320);
 setupResize('rh-wp','wp','right',160,500);
+// Affichage version
+const _ver=document.getElementById('_ver_lbl');if(_ver&&typeof EP_VERSION!=='undefined')_ver.textContent=EP_VERSION;
 const _restored=loadSession();
 snapshot(); // état initial dans l'historique undo
 setView('all'); // initialise l'affichage de tous les canvas (cv-top/bot/plan)
