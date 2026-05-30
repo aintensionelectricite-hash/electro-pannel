@@ -366,6 +366,54 @@ function drawCutLine(ctx,sx,sy,sw,w,h,sc,layout){
   ctx.fillStyle='rgba(200,88,0,.88)';rr(ctx,midX-28,cy-9,56,14,5);ctx.fill();
   ctx.font='bold 8.5px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
   ctx.fillText(lbl,midX,cy+1);
+
+  // ── Mini encart de coupe transversale (à gauche du trait)
+  const cY3=cutLineY||layout.h/2;
+  if(cY3>=0&&cY3<=layout.h){
+    const thick=panelThick(cY3,layout.h);
+    const scZ3=Math.min(2.5,60/Math.max(thick,10));
+    const mW=Math.round(thick*scZ3)+24,mH=52;
+    const mX=x0-mW-14,mY=cy-mH/2;
+    ctx.save();
+    // Fond du mini-encart
+    ctx.fillStyle='rgba(248,252,255,.95)';ctx.strokeStyle='rgba(90,120,180,.4)';ctx.lineWidth=.8;
+    rr(ctx,mX,mY,mW,mH,5);ctx.fill();ctx.stroke();
+    // Matière fond (ABS)
+    const mat=ctx.createLinearGradient(mX+4,mY+6,mX+4+thick*scZ3,mY+6);
+    mat.addColorStop(0,'#C0C8D5');mat.addColorStop(1,'#AEB8C5');
+    ctx.fillStyle=mat;ctx.fillRect(mX+4,mY+10,Math.round(thick*scZ3),mH-18);
+    ctx.strokeStyle='#4E6070';ctx.lineWidth=.6;ctx.strokeRect(mX+4,mY+10,Math.round(thick*scZ3),mH-18);
+    // Zone à ce niveau
+    const zone2=layout.zones.find(z=>cY3>=z.y&&cY3<z.y+z.h);
+    if(zone2){
+      const depth=getZD(zone2);
+      const dPx=Math.round(depth*scZ3);
+      if(zone2.type==='goulH'){
+        ctx.fillStyle='#FAECE7';ctx.strokeStyle='#D85A30';ctx.lineWidth=.5;
+        ctx.fillRect(mX+4+Math.round(layout.intX/layout.w*thick*scZ3),mY+10,Math.max(1,dPx),mH-18);
+      } else if(zone2.type==='rail'){
+        const railFZ=RAIL_FRONT_Z[zone2.label]!==undefined?RAIL_FRONT_Z[zone2.label]:Math.round(depth*.25);
+        const rY3=mY+10+Math.round(railFZ*scZ3);
+        const rH3=Math.max(2,Math.round(10*scZ3));
+        ctx.fillStyle='#E0E0E0';ctx.strokeStyle='#888';ctx.lineWidth=.5;
+        ctx.fillRect(mX+4,rY3,Math.round(thick*scZ3),rH3);ctx.strokeRect(mX+4,rY3,Math.round(thick*scZ3),rH3);
+        // Composants à ce niveau
+        PLACED.filter(p=>p.type==='comp'&&p.railRef?.label===zone2.label&&cY3>=p.wy&&cY3<=p.wy+p.comp.modH).forEach(p=>{
+          const cx2=mX+4+Math.round(railFZ*scZ3);
+          const cW3=Math.round(10*scZ3)+4;
+          const cH3=Math.round(p.comp.modW/layout.w*thick*scZ3)+2;
+          ctx.fillStyle=p.comp.color+'99';ctx.strokeStyle=p.comp.color;ctx.lineWidth=.3;
+          rr(ctx,cx2,rY3-2,cW3,Math.max(2,cH3),1);ctx.fill();ctx.stroke();
+        });
+      }
+    }
+    // Label
+    ctx.font='bold 6px system-ui';ctx.fillStyle='#666';ctx.textAlign='center';
+    const zLbl=zone2?(zone2.type==='goulH'?zone2.label:zone2.label):zone2?zone2.label:'';
+    ctx.fillText(`ép.${Math.round(thick)}mm${zLbl?' '+zLbl:''}`,mX+mW/2,mY+mH-3);
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 
