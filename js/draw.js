@@ -369,13 +369,13 @@ function drawCutLine(ctx,sx,sy,sw,w,h,sc,layout){
   ctx.font='bold 8.5px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
   ctx.fillText(lbl,midX,cy+1);
 
-  // ── Mini encart de coupe transversale (à gauche du trait)
+  // ── Mini encart de coupe transversale (à droite du trait)
   const cY3=cutLineY||layout.h/2;
   if(cY3>=0&&cY3<=layout.h){
     const thick=panelThick(cY3,layout.h);
     const scZ3=Math.min(2.5,60/Math.max(thick,10));
     const mW=Math.round(thick*scZ3)+24,mH=52;
-    const mX=x0-mW-14,mY=cy-mH/2;
+    const mX=x1+14,mY=cy-mH/2;
     ctx.save();
     // Fond du mini-encart
     ctx.fillStyle='rgba(248,252,255,.95)';ctx.strokeStyle='rgba(90,120,180,.4)';ctx.lineWidth=.8;

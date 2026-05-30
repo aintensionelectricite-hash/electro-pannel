@@ -1,7 +1,7 @@
 // electro-pannel — CAO armoire électrique Spacial S3D
 // Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
 // Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
-const EP_VERSION='v19';
+const EP_VERSION='v20';
 
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
