@@ -121,6 +121,7 @@ setupResize('rh-lib','lib','left',80,320);
 setupResize('rh-wp','wp','right',160,500);
 const _restored=loadSession();
 snapshot(); // état initial dans l'historique undo
+setView('all'); // initialise l'affichage de tous les canvas (cv-top/bot/plan)
 draw();
 updateWT();
 updateInfo();
