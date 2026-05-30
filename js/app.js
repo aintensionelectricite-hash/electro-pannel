@@ -1,7 +1,7 @@
 // electro-pannel — CAO armoire électrique Spacial S3D
 // Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
 // Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
-const EP_VERSION='v16';
+const EP_VERSION='v17';
 
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
@@ -1024,6 +1024,20 @@ function setupFaceCanvas(){
     const r=cv.getBoundingClientRect();
     const[wx,wy]=F2W(e.clientX-r.left,e.clientY-r.top);
     const px_=e.clientX-r.left,py_=e.clientY-r.top;
+    // En mode fil : clic droit = annuler le tracé en cours
+    if(wm.active){
+      if(wm.startP&&wm.waypoints.length>0){
+        // Proposer de créer le fil jusqu'au dernier waypoint ou annuler
+        const sp=getConnPts(wm.startP).find(pt=>pt.id===wm.startPtId);
+        if(sp&&wm.waypoints.length>0){
+          // Créer un fil ouvert (sans endP) — possible si l'user veut terminer là
+          // Pour l'instant : annuler proprement
+        }
+      }
+      wm={active:wm.active,startP:null,startPtId:null,prevX:0,prevY:0,waypoints:[]};
+      showToast('Tracé fil annulé — Clic droit = annuler, Échap = quitter mode fil',2000);
+      draw();updateInfo();return;
+    }
     // Clic droit sur un point intermédiaire de fil → supprimer ce point
     for(const w of WIRES){
       for(let i=1;i<w.pts.length-1;i++){

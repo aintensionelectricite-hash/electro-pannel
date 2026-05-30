@@ -337,8 +337,10 @@ function drawCutLine(ctx,sx,sy,sw,w,h,sc,layout){
     ctx.fillText('×',btnX,btnY+2.5);
   });
 
+  // ── Bandeau semi-transparent signalant la coupe (visible même sans zoomer)
+  ctx.fillStyle='rgba(200,88,0,.07)';ctx.fillRect(x0,cy-3,x1-x0,6);
   // Ligne pointillée ISO
-  ctx.strokeStyle='#C85800';ctx.lineWidth=1.2;ctx.setLineDash([10,4,2,4]);
+  ctx.strokeStyle='#C85800';ctx.lineWidth=1.8;ctx.setLineDash([10,4,2,4]);
   ctx.beginPath();ctx.moveTo(x0,cy);ctx.lineTo(x1,cy);ctx.stroke();ctx.setLineDash([]);
   // Flèches A — A
   function arrow(ax,ay,dir){
