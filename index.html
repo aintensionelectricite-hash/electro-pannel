@@ -85,12 +85,17 @@
   </div>
   <div class="resize-h" id="rh-lib" title="Redimensionner bibliothèque"></div>
   <div id="views-area">
-    <canvas id="cv-face"></canvas>
-    <canvas id="cv-plan" style="cursor:default"></canvas>
-    <canvas id="cv-top" style="display:none"></canvas>
-    <canvas id="cv-bot" style="display:none"></canvas>
-    <canvas id="cv-door" style="display:none"></canvas>
-    <canvas id="cv-iso" style="display:none"></canvas>
+    <div id="view-face-col">
+      <canvas id="cv-face"></canvas>
+      <canvas id="cv-door" style="display:none"></canvas>
+      <canvas id="cv-iso" style="display:none"></canvas>
+    </div>
+    <div id="view-section-col">
+      <div id="_sec_title" style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;padding:2px 0">Coupe A-A (live)</div>
+      <canvas id="cv-plan" style="cursor:default"></canvas>
+      <canvas id="cv-top" style="display:none"></canvas>
+      <canvas id="cv-bot" style="display:none"></canvas>
+    </div>
   </div>
   <div class="resize-h" id="rh-wp" title="Redimensionner tableau filerie"></div>
   <div id="wp">

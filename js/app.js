@@ -1,7 +1,7 @@
 // electro-pannel — CAO armoire électrique Spacial S3D
 // Version : v13 (2026-05-30) — coupes multiples, undo/redo, vue 3D, Legrand rouge, Schneider vert, Hager bleu
 // Résumé des fonctionnalités : voir js/library.js pour les composants, css/style.css pour les styles
-const EP_VERSION='v14';
+const EP_VERSION='v15';
 
 const MODELS={
   '600x1200':{w:600,h:1200,m:30},
@@ -112,15 +112,19 @@ let currentView='all';
 function setView(v){
   currentView=v;
   document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
-  const face=v==='all'||v==='face',plan=v==='all'||v==='plan';
-  const plaques=v==='all'||v==='plaques',porte=(v==='all'||v==='porte')&&doorVisible;
-  const iso=v==='iso';
-  document.getElementById('cv-face').style.display=face?'block':'none';
-  document.getElementById('cv-plan').style.display=plan?'block':'none';
-  document.getElementById('cv-top').style.display=plaques?'block':'none';
-  document.getElementById('cv-bot').style.display=plaques?'block':'none';
+  // Colonne gauche (face, porte, iso)
+  const face=v!=='plan'&&v!=='plaques',porte=(v==='all'||v==='porte')&&doorVisible,iso=v==='iso';
+  document.getElementById('cv-face').style.display=(face&&!iso)?'block':'none';
   document.getElementById('cv-door').style.display=porte?'block':'none';
   document.getElementById('cv-iso').style.display=iso?'block':'none';
+  // Colonne droite (plan = toujours visible, plaques si demandé)
+  document.getElementById('cv-plan').style.display=(v!=='porte'&&v!=='iso')?'block':'none';
+  const plaques=v==='all'||v==='plaques';
+  document.getElementById('cv-top').style.display=plaques?'block':'none';
+  document.getElementById('cv-bot').style.display=plaques?'block':'none';
+  // Titre colonne section
+  const secTitle=document.getElementById('_sec_title');
+  if(secTitle)secTitle.textContent=v==='plaques'?'Plaques PE':'Coupe A-A (live)';
   if(iso)draw();
 }
 
